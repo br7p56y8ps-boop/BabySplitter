@@ -1,0 +1,126 @@
+BabySplitter – Complete Project Specification
+Develop a modern cloud-based expense sharing Progressive Web App (PWA) similar to Splitwise while preserving the existing project architecture. The application must be production-ready, responsive, maintainable, and optimized for mobile.
+Instructions for the Replit Agent (Build & Deploy Setup)
+Build this app to be deployed on Vercel with Supabase as the database and real-time sync layer. Do not set up Replit’s own always-on deployment/hosting — the finished code will be deployed externally, for free, on Vercel.
+Steps:
+1.	Build and test the app within Replit as normal.
+2.	Connect this Repl to a GitHub repository and push the finished code there.
+3.	Use the following Supabase credentials to connect the app’s database and real-time sync (store these as Replit Secrets / environment variables, never hardcoded in the code):
+Project URL: https://lxnzautcwhcfjkzwhjbz.supabase.co
+Anon Key:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4bnphdXRjd2hjZmprendoamJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0NzkyN 4iYPMWKKWvvM7hu0V3282EE
+4.	Set up the necessary Supabase tables/schema for Expenses, Settlements, History, Chat, and Notifications, and use Supabase real-time subscriptions to keep all members in sync live.
+5.	Once pushed to GitHub, the app will be imported into Vercel directly from the repository (one-click “Import from GitHub”) — no separate build steps required beyond a working package.json and standard Next.js/React project structure.
+Tech Stack & Deployment (Free Tier)
+Code hosting: GitHub (private or public repo)
+Frontend framework: React (Next.js recommended for PWA support, routing, and easy Vercel deploys)
+Frontend hosting: Vercel — auto-deploys from GitHub on every push, free SSL, free tier sufficient for small user groups
+Backend / Database / Real-time sync: Supabase (Postgres) — use Supabase real-time subscriptions for live sync across Expenses, Settlements, History, Chat, and Notifications
+Auth: None required (per Member Selection spec) — use local identity storage only, no Supabase Auth needed
+File/Image storage: Supabase Storage (free tier) for app icon and any uploaded assets
+PWA requirements: Web Manifest, service worker for offline caching, installable icons/splash screens generated via a tool like pwa-asset-generator
+Offline behavior: If an action (add/edit expense, chat message, settlement) is performed with no network, queue it locally and auto-sync once reconnected. Show a “pending sync” indicator on queued items until confirmed synced.
+Push notifications: In addition to the in-app notification bell, implement real push notifications via the service worker (e.g. Web Push API) so members are notified even when the app isn’t open.
+All services above remain free at this app’s expected scale (fixed small set of members, low read/write volume).
+App is intended for a closed group of known, trusted friends — no authentication or per-user access control is required.
+General
+Responsive Progressive Web App (PWA). Installable on Android, iOS and Desktop. Include Web Manifest, PWA icons, favicon and splash screen. Real-time cloud synchronization. Mobile-first Material Design UI. Smooth animations. Light/Dark liquid iOS mode. Refresh button beside every page title. Floating Action Button (+) on Home for adding expenses.
+Attached pic acts as App icon everywhere. Generate all required sizes from the source image (including 192x192, 512x512, and a maskable variant) for proper installability across platforms.
+UI Design Requirements
+The app must look and feel like a modern, current-generation app — not a generic template or dated/basic UI. Avoid plain flat colors, boxy default
+components, or anything that looks like a default Bootstrap/Material starter theme. Every screen should feel premium, deliberate, and visually polished, on par with top-tier consumer apps released in 2025–2026.
+Implement true iOS Liquid Glass aesthetics with translucent frosted glass surfaces, subtle blur, soft highlights, realistic reflections, and depth.
+Convert all cards, navigation bars, tabs, sidebars, modals, dialogs, dropdowns, buttons, input fields, floating panels, and widgets into glassmorphic components.
+Use rounded corners (16–28px), soft shadows, thin glass borders, and layered transparency.
+Replace all icons with glass-styled icons featuring subtle depth and lighting while maintaining consistency throughout the UI.
+Add smooth micro-interactions, hover effects, press animations, spring transitions, and fluid page transitions inspired by iOS.
+Support both Light Mode and Dark Mode (black theme) with seamless switching and proper contrast for accessibility.
+Ensure typography remains clean and readable using Apple’s visual hierarchy with generous spacing.
+Use vibrant accent colors only where appropriate, allowing glass surfaces to remain the primary visual element.
+Maintain responsive behavior across desktop, tablet, and mobile devices.
+Optimize for performance by minimizing expensive blur effects and ensuring smooth animations (60fps where possible).
+Preserve accessibility (WCAG), keyboard navigation, and touch interactions.
+Do not alter the site’s structure, features, or business logic—only modernize the visual design.
+Goal: Create a polished, premium, futuristic interface that feels like a native iOS experience with Liquid Glass-inspired glassmorphism throughout the entire website, including every card, tab, icon, navigation element, and interactive component.
+Member Selection
+No authentication. On first launch: show predefined members:
+Avraar
+Chetan
+Tenzing
+Sanajaoba
+Balbir
+Dhanaraj
+User selects one identity. Save identity locally. Identity can only be changed once from Settings. Before changing identity display: “Changing your identity cannot be undone. Continue?”
+Settings should also allow:
+Rename preset members
+Add new members
+Preset members cannot be deleted
+Renaming a preset member must not retroactively change how their name appears in existing expenses, settlements, or history — past records display the name as it was at the time of that record.
+Bottom Navigation
+Home, Settlement, Chat, History, Settings
+Home
+Place a Floating Action Button (+) at the bottom-right. Pressing the button opens a centered modal/dialog (must not overlap AppBar or Bottom Navigation).
+Fields:
+Expense Title & Expense Date (dd/mm/yy)
+Currency: Taka (default), INR, USD, and Add temporary Member (for that specific expense only; not added as permanent member; included in shares/settlement for that expense only)
+Paid By — Dropdown from preset members. Multiple payers supported with individual amounts.
+  Participants — Multi-select from preset members (member who paid/selected for “paid by” are automatically selected as participants)
+After saving, display the expense under Recent Expenses. Every expense appears as an expandable card.
+Collapsed Card: Expense Title, Total Expense, Date
+Expanded Card: Paid By, Participants, Edit Expense, Delete Expense, Reset Expense
+All fields remain editable after creation. If an expense has already been partially settled, already-settled transactions must remain frozen (unaffected by the edit); only the unsettled remainder is recalculated against the new values.
+Temporary (per-expense) members are treated identically to preset members within that expense’s settlement calculations, “who owes whom” breakdown, and History records — they simply have no Settings profile of their own.
+Settlement
+Display every expense as an expandable card.
+Top-right: Settle All
+Each expense supports: Settle this expense only. Select multiple expenses. Settle remaining expenses (settles every unsettled transaction across all expenses not yet individually settled). Settle All settles every outstanding transaction across all expenses, including any already selected for individual settlement — it does not conflict with or duplicate prior individual settlements, since settled transactions are always excluded from further calculation. Expanded card displays: Expense Title, Total Amount, Paid By, Participants, Equal share, Who owes whom Example:
+A	→ B : ₹250     [Settle]
+B	→ C : ₹180     [Settle]
+Individual settlement rules:
+Only that debtor-creditor transaction is settled
+Expense becomes Partially Settled
+Settled transaction must never be counted again
+Previously settled transfers remain visible
+Multiple Expense Settlement
+Selecting individual/multiple expenses or Settle All opens a center modal (never overlaps AppBar or Nav bar; never full screen).
+Previously settled transactions: Highlight as Settled. Keep visible. Exclude from calculation.
+Display Net Summary.
+Example:
+D pays C = ₹420
+Also display calculation breakdown:
+Total paid by D = ₹1000
+Equal share = ₹200
+Recoverable amount = ₹800
+Clearly explain how the net value is calculated.
+Settlement requires confirmation before completion. Cancel option to cancel settlement.
+Chat
+Single community chat. No individual/private chat.
+Display: Member name, Time, Message Real-time synchronization.
+Notifications (Home Tab only)
+Notification bell in AppBar. Tapping opens a center global modal (doesn’t overlap AppBar/Navbar; never full screen).
+Notify users for: New expense, Expense edited, Expense deleted, Settlement completed (latest 10 activities).
+History
+Maintain complete history for Settlements.
+Each Settlement Card in history stores: Debtor, Creditor, Amount, Expense Date, Partial/Full settlement, Settlement date and settled by [MemberName],
+Undo option (undoes the settlement and returns it to Home’s Recent Expenses, behaving as newly added, tagged: Undone/Unsettled/Moved from History)
+Settings
+Cards:
+Member Profile (contains Sync Status dot on top right of Member Title)
+Rename preset members
+Add member
+Theme Mode: Light/Dark
+About
+Synchronization
+All members must see identical data in real time.
+Synchronize: Expenses, Settlements, History, Chat, Notifications Manual refresh acts only as a backup.
+Settlement Rules
+Equal split among participants. Individual settlements. Per-expense settlements. Multiple-expense settlements. Settle All. Partial settlements. Settled transactions must never be recalculated. No duplicate calculations. Summary must always match balances.
+Acceptance Criteria
+Production-ready
+No balance mismatch
+No duplicate settlements
+Accurate history
+Instant cloud synchronization
+Clean and maintainable architecture
+Responsive on desktop and mobile
+Preserve all functionality while implementing these enhancements
