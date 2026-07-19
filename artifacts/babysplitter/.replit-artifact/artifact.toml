@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "BabySplitter"
+version = "1.0.0"
+id = "artifacts/babysplitter"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22163
+
+[services.development]
+run = "pnpm --filter @workspace/babysplitter run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/babysplitter", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/babysplitter/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22163"
+BASE_PATH = "/"
