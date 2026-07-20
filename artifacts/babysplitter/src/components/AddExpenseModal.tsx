@@ -18,7 +18,6 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
   const { addExpense, deleteExpense } = useMutations();
 
   const [title, setTitle] = useState(editExpense?.title || "");
-  const [amount, setAmount] = useState(editExpense?.total_amount.toString() || "");
   const [currency, setCurrency] = useState(editExpense?.currency || "BDT");
   const [date, setDate] = useState(
     editExpense
@@ -42,6 +41,14 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
   const [participants, setParticipants] = useState<string[]>(
     editExpense?.participants.map(p => p.member_name) || []
   );
+
+  // Auto-calculate total from payer amounts
+  const totalAmount = useMemo(
+    () => payers.reduce((sum, p) => sum + (p.amountPaid || 0), 0),
+    [payers]
+  );
+
+  const currencySymbol = currency === 'BDT' ? '৳' : currency === 'INR' ? '₹' : '$';
 
   const handlePayerChange = (index: number, field: keyof Payer, value: string | number) => {
     const updated = [...payers];
@@ -74,14 +81,8 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
   };
 
   const handleSubmit = () => {
-    const totalAmount = parseFloat(amount);
-    if (!title || isNaN(totalAmount) || totalAmount <= 0 || payers.length === 0 || participants.length === 0) {
+    if (!title || totalAmount <= 0 || payers.length === 0 || participants.length === 0) {
       alert("Please fill all required fields and select participants.");
-      return;
-    }
-    const payerTotal = payers.reduce((sum, p) => sum + p.amountPaid, 0);
-    if (Math.abs(payerTotal - totalAmount) > 0.1) {
-      alert(`Payer amounts (${payerTotal.toFixed(2)}) do not match total (${totalAmount.toFixed(2)})`);
       return;
     }
     addExpense.mutate({
@@ -98,10 +99,8 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
 
   if (!isOpen) return null;
 
-  const currencySymbol = currency === 'BDT' ? '৳' : currency === 'INR' ? '₹' : '$';
-
   return (
-    /* Full-screen overlay — fixed, never scrolls */
+    /* Full-screen overlay */
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
       {/* Backdrop */}
       <div
@@ -109,10 +108,10 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
         onClick={onClose}
       />
 
-      {/* Dialog — fixed size, no scroll, no drag */}
+      {/* Dialog */}
       <div
         className="relative w-full max-w-sm glass-panel-heavy rounded-3xl flex flex-col overflow-hidden"
-        style={{ maxHeight: 'min(640px, 90dvh)' }}
+        style={{ maxHeight: 'min(680px, 92dvh)' }}
       >
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/20 dark:border-white/10 shrink-0">
@@ -127,8 +126,8 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
           </button>
         </div>
 
-        {/* ── Body — NO overflow, everything fits ── */}
-        <div className="px-5 py-3 flex flex-col gap-2.5 shrink-0">
+        {/* ── Body — scrollable ── */}
+        <div className="px-5 py-3 flex flex-col gap-2.5 overflow-y-auto flex-1 hide-scrollbar">
 
           {editExpense && editExpense.status !== 'unsettled' && (
             <p className="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2 font-medium leading-snug">
@@ -136,102 +135,102 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
             </p>
           )}
 
-          {/* Title */}
-          <input
-            type="text"
-            placeholder="What was it for?"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            className="glass-input w-full text-sm font-semibold placeholder:font-normal placeholder:text-muted-foreground"
-            disabled={!!editExpense}
-          />
+          {/* ── Row 1: Title + Date ── */}
+          <div className="flex gap-2 items-center">
+            <input
+              type="text"
+              placeholder="What was it for?"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="glass-input flex-1 min-w-0 text-sm font-semibold placeholder:font-normal placeholder:text-muted-foreground"
+              disabled={!!editExpense}
+            />
+            {/* Compact date picker */}
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="glass-input w-[7.5rem] shrink-0 text-xs text-center"
+              disabled={!!editExpense}
+            />
+          </div>
 
-          {/* Amount + Currency — same row, aligned edges */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm pointer-events-none select-none z-10">
-                {currencySymbol}
-              </span>
-              <input
-                type="number"
-                placeholder="0.00"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                className="glass-input w-full pl-7 text-sm"
-                disabled={!!editExpense}
-              />
-            </div>
+          {/* ── Row 2: Currency symbol | Total (auto-calc) | Temp Member + Add ── */}
+          <div className="flex gap-2 items-center">
+            {/* Currency selector — just symbol displayed, selects full currency */}
             <select
               value={currency}
               onChange={e => setCurrency(e.target.value)}
-              className="glass-input w-[4.5rem] shrink-0 text-sm text-center appearance-none cursor-pointer"
+              className="glass-input w-[3.25rem] shrink-0 text-sm text-center appearance-none cursor-pointer font-bold"
               disabled={!!editExpense}
             >
-              <option value="BDT">BDT</option>
-              <option value="INR">INR</option>
-              <option value="USD">USD</option>
+              <option value="BDT">৳</option>
+              <option value="INR">₹</option>
+              <option value="USD">$</option>
             </select>
+
+            {/* Auto-calculated total */}
+            <div className="glass-input w-[5.5rem] shrink-0 text-sm tabular-nums font-semibold text-center select-none text-muted-foreground bg-white/10 cursor-default">
+              {totalAmount > 0 ? totalAmount.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0.00'}
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-6 bg-white/20 dark:bg-white/10 shrink-0" />
+
+            {/* Temp Member input + Add */}
+            {!editExpense ? (
+              <>
+                <input
+                  type="text"
+                  value={tempMemberInput}
+                  onChange={e => setTempMemberInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddTempMember()}
+                  placeholder="Temp member…"
+                  className="glass-input flex-1 min-w-0 text-xs"
+                />
+                <button
+                  onClick={handleAddTempMember}
+                  className="glass-button px-2.5 py-1.5 rounded-xl text-xs font-semibold shrink-0"
+                >
+                  <Plus size={12} />
+                </button>
+              </>
+            ) : (
+              <div className="flex-1" />
+            )}
           </div>
 
-          {/* Date */}
-          <input
-            type="date"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-            className="glass-input w-full text-sm"
-            disabled={!!editExpense}
-          />
-
           <div className="h-px bg-white/25 dark:bg-white/10" />
 
-          {/* Temp Member — before Paid By */}
-          {!editExpense && (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={tempMemberInput}
-                onChange={e => setTempMemberInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAddTempMember()}
-                placeholder="Add temp member (optional)…"
-                className="glass-input flex-1 text-xs"
-              />
-              <button
-                onClick={handleAddTempMember}
-                className="glass-button px-3 rounded-xl text-xs font-semibold shrink-0"
-              >
-                Add
-              </button>
-            </div>
-          )}
-
-          <div className="h-px bg-white/25 dark:bg-white/10" />
-
-          {/* Paid By */}
+          {/* ── Row 3: Paid By ── */}
           <div className="flex flex-col gap-1.5">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Paid By</p>
             {payers.map((payer, idx) => (
               <div key={idx} className="flex gap-2">
+                {/* Member select — narrower */}
                 <select
                   value={payer.memberName}
                   onChange={e => handlePayerChange(idx, 'memberName', e.target.value)}
-                  className="glass-input flex-1 min-w-0 text-xs"
+                  className="glass-input flex-[5] min-w-0 text-xs"
                   disabled={!!editExpense}
                 >
                   <option value="" disabled>Select member</option>
                   {allMembersList.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
+                {/* Amount — wider than before */}
                 <input
                   type="number"
+                  inputMode="numeric"
                   value={payer.amountPaid || ""}
                   onChange={e => handlePayerChange(idx, 'amountPaid', parseFloat(e.target.value) || 0)}
                   placeholder="Amount"
-                  className="glass-input w-[4.5rem] shrink-0 text-xs"
+                  className="glass-input flex-[3] min-w-0 text-xs"
                   disabled={!!editExpense}
                 />
                 {!editExpense && payers.length > 1 && (
                   <button
                     onClick={() => setPayers(p => p.filter((_, i) => i !== idx))}
-                    className="w-8 shrink-0 flex items-center justify-center text-destructive"
+                    className="w-7 shrink-0 flex items-center justify-center text-destructive"
                   >
                     <X size={13} />
                   </button>
@@ -250,7 +249,7 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
 
           <div className="h-px bg-white/25 dark:bg-white/10" />
 
-          {/* Split Among */}
+          {/* ── Row 4: Participants ── */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Split Among</p>
@@ -287,16 +286,26 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
           </div>
         </div>
 
-        {/* ── Footer ── */}
-        <div className="px-5 py-3.5 border-t border-white/20 dark:border-white/10 shrink-0">
+        {/* ── Footer: Save + Cancel ── */}
+        <div className="px-5 py-3.5 border-t border-white/20 dark:border-white/10 shrink-0 flex flex-col gap-2">
           {!editExpense ? (
-            <button
-              onClick={handleSubmit}
-              disabled={addExpense.isPending}
-              className="w-full py-3 rounded-2xl glass-button-primary font-semibold text-sm flex items-center justify-center gap-2"
-            >
-              {addExpense.isPending ? <RefreshCw className="animate-spin" size={16} /> : 'Save Expense'}
-            </button>
+            <>
+              {/* Row 5: Save */}
+              <button
+                onClick={handleSubmit}
+                disabled={addExpense.isPending}
+                className="w-full py-2.5 rounded-2xl glass-button-primary font-semibold text-sm flex items-center justify-center gap-2"
+              >
+                {addExpense.isPending ? <RefreshCw className="animate-spin" size={16} /> : 'Save Expense'}
+              </button>
+              {/* Row 6: Cancel */}
+              <button
+                onClick={onClose}
+                className="w-full py-2 rounded-2xl glass-button font-medium text-sm text-muted-foreground"
+              >
+                Cancel
+              </button>
+            </>
           ) : (
             <button
               onClick={() => {
@@ -305,7 +314,7 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
                 }
               }}
               disabled={deleteExpense.isPending}
-              className="w-full py-3 rounded-2xl bg-destructive/90 hover:bg-destructive text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-97"
+              className="w-full py-2.5 rounded-2xl bg-destructive/90 hover:bg-destructive text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-97"
             >
               {deleteExpense.isPending ? <RefreshCw className="animate-spin" size={16} /> : 'Delete Expense'}
             </button>

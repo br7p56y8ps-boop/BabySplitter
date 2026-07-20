@@ -26,7 +26,6 @@ function HistoryCard({
     ? expense.total_amount / expense.participants.length
     : 0;
 
-  // Use the latest settlement date as the card's settled date
   const latestSettlement = expense.settlements.length > 0
     ? expense.settlements.reduce((a, b) => new Date(a.settled_at) > new Date(b.settled_at) ? a : b)
     : null;
@@ -35,26 +34,46 @@ function HistoryCard({
     <motion.div layout className="glass-panel rounded-3xl overflow-hidden">
       {/* Collapsed header */}
       <div
-        className="px-5 py-4 flex items-center justify-between cursor-pointer select-none"
+        className="px-5 py-4 cursor-pointer select-none relative"
         onClick={() => setExpanded(v => !v)}
       >
-        <div className="flex flex-col gap-0.5 min-w-0 mr-3">
-          <h4 className="font-semibold text-base leading-tight truncate">{expense.title}</h4>
-          <span className="text-xs text-muted-foreground font-medium">
-            {format(new Date(expense.expense_date), 'dd MMM yyyy')}
-            {latestSettlement && (
-              <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">· Settled</span>
-            )}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <span className="font-bold text-base tabular-nums">
-            {currencySymbol}{expense.total_amount.toLocaleString()}
-          </span>
-          <div className="text-muted-foreground">
-            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        {/* Content — blurred when collapsed */}
+        <div className={`flex items-center justify-between transition-[filter] duration-200 ${!expanded ? 'blur-[2px]' : ''}`}>
+          <div className="flex flex-col gap-0.5 min-w-0 mr-3">
+            <h4 className="font-semibold text-base leading-tight truncate">{expense.title}</h4>
+            <span className="text-xs text-muted-foreground font-medium">
+              {format(new Date(expense.expense_date), 'dd MMM yyyy')}
+              {latestSettlement && (
+                <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-semibold">· Settled</span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="font-bold text-base tabular-nums">
+              {currencySymbol}{expense.total_amount.toLocaleString()}
+            </span>
+            <div className="text-muted-foreground">
+              {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </div>
           </div>
         </div>
+
+        {/* Settled stamp — only when collapsed */}
+        <AnimatePresence>
+          {!expanded && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            >
+              <span className="rotate-[-12deg] border-2 border-emerald-400/70 text-emerald-400 dark:text-emerald-400 font-bold text-sm tracking-[0.2em] uppercase px-4 py-1 rounded opacity-80 select-none">
+                Settled
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Expanded content */}
@@ -180,7 +199,6 @@ export default function History() {
   const settledExpenses = (expenses || [])
     .filter(e => e.status === 'settled')
     .sort((a, b) => {
-      // Sort by the latest settlement date, newest first
       const latestA = a.settlements.length > 0
         ? Math.max(...a.settlements.map(s => new Date(s.settled_at).getTime()))
         : 0;
