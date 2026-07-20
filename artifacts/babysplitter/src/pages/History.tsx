@@ -143,7 +143,8 @@ function HistoryCard({
                           <span className="font-semibold">{s.debtor}</span>
                           <div className="flex-1 flex items-center gap-1 min-w-0">
                             <div className="flex-1 h-px bg-white/30 dark:bg-white/15" />
-                            <span className="text-xs font-bold tabular-nums px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
+                            {/* All transactions in History are settled — green */}
+                            <span className="text-xs font-bold tabular-nums px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 shrink-0">
                               {currencySymbol}{s.amount.toLocaleString()}
                             </span>
                             <div className="flex-1 h-px bg-white/30 dark:bg-white/15" />

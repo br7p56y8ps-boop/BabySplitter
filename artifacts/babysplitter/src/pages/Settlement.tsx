@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  CheckCircle2, Check, ArrowRight, Layers, Square, CheckSquare,
-  ChevronDown, ChevronUp, Info
+  CheckCircle2, Check, ArrowRight, Layers,
+  Square, CheckSquare, ChevronDown, ChevronUp, Info
 } from 'lucide-react';
 import { ExpenseWithDetails } from '@/types';
 
@@ -41,7 +41,6 @@ function currencySymbol(c: string) {
   return c === 'BDT' ? '৳' : c === 'INR' ? '₹' : '$';
 }
 
-/** Compute net minimum transfers across an arbitrary set of expenses (grouped by currency). */
 function calcNetGroups(expenses: ExpenseWithDetails[]): NetGroup[] {
   const byCurrency: Record<string, ExpenseWithDetails[]> = {};
   for (const e of expenses) {
@@ -75,28 +74,22 @@ function calcNetGroups(expenses: ExpenseWithDetails[]): NetGroup[] {
       }))
       .sort((a, b) => b.net - a.net);
 
-    // Minimum-transactions algorithm
-    const debtors = personBreakdown
+    const d = personBreakdown
       .filter(r => r.net < -0.01)
       .map(r => ({ name: r.name, balance: Math.abs(r.net) }))
-      .sort((a, b) => b.balance - a.balance);
-    const creditors = personBreakdown
+      .sort((a, b) => b.balance - a.balance)
+      .map(x => ({ ...x }));
+    const c = personBreakdown
       .filter(r => r.net > 0.01)
       .map(r => ({ name: r.name, balance: r.net }))
-      .sort((a, b) => b.balance - a.balance);
+      .sort((a, b) => b.balance - a.balance)
+      .map(x => ({ ...x }));
 
-    // Clone to avoid mutation
-    const d = debtors.map(x => ({ ...x }));
-    const c = creditors.map(x => ({ ...x }));
     const transfers: NetTransfer[] = [];
     let i = 0, j = 0;
     while (i < d.length && j < c.length) {
       const amount = Math.min(d[i].balance, c[j].balance);
-      transfers.push({
-        debtor: d[i].name,
-        creditor: c[j].name,
-        amount: parseFloat(amount.toFixed(2)),
-      });
+      transfers.push({ debtor: d[i].name, creditor: c[j].name, amount: parseFloat(amount.toFixed(2)) });
       d[i].balance -= amount;
       c[j].balance -= amount;
       if (d[i].balance < 0.01) i++;
@@ -107,7 +100,6 @@ function calcNetGroups(expenses: ExpenseWithDetails[]): NetGroup[] {
   });
 }
 
-/** Build the raw per-expense transactions needed by settleMultiple. */
 function buildRawTransactions(expenses: ExpenseWithDetails[]): RawTransaction[] {
   const result: RawTransaction[] = [];
   for (const expense of expenses) {
@@ -140,13 +132,11 @@ function SettleConfirmDialog({
   onConfirm,
   onClose,
   isPending,
-  identity,
 }: {
   expenses: ExpenseWithDetails[];
   onConfirm: (raw: RawTransaction[]) => void;
   onClose: () => void;
   isPending: boolean;
-  identity: string;
 }) {
   const [showExplanation, setShowExplanation] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -175,7 +165,6 @@ function SettleConfirmDialog({
         className="relative w-full max-w-xs glass-panel-heavy rounded-3xl flex flex-col overflow-hidden"
         style={{ maxHeight: 'min(560px, 88dvh)' }}
       >
-        {/* Header */}
         <div className="px-5 pt-5 pb-3 shrink-0">
           <h2 className="text-base font-bold text-center">Confirm Settlement</h2>
           <p className="text-[11px] text-center text-muted-foreground mt-1">
@@ -183,7 +172,6 @@ function SettleConfirmDialog({
           </p>
         </div>
 
-        {/* Net transactions list */}
         <div className="px-4 overflow-y-auto flex-1 hide-scrollbar">
           {netGroups.map(group => (
             <div key={group.currency} className="mb-3">
@@ -206,7 +194,8 @@ function SettleConfirmDialog({
                       <span className="text-xs font-semibold flex-1 min-w-0 truncate">{t.debtor}</span>
                       <ArrowRight size={12} className="text-muted-foreground shrink-0" />
                       <span className="text-xs font-semibold flex-1 min-w-0 truncate text-right">{t.creditor}</span>
-                      <span className="text-xs font-bold tabular-nums ml-1 shrink-0 text-primary">
+                      {/* Amount — red (not yet settled) */}
+                      <span className="text-xs font-bold tabular-nums ml-1 shrink-0 text-red-500">
                         {group.symbol}{t.amount.toLocaleString()}
                       </span>
                     </div>
@@ -244,8 +233,6 @@ function SettleConfirmDialog({
                       This gives the fewest possible payments to clear all balances — the same end
                       result, just fewer transactions.
                     </p>
-
-                    {/* Per-person breakdown toggle */}
                     <button
                       onClick={() => setShowBreakdown(v => !v)}
                       className="flex items-center gap-1 text-[10px] font-semibold text-primary self-start"
@@ -253,7 +240,6 @@ function SettleConfirmDialog({
                       {showBreakdown ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
                       Per-person breakdown
                     </button>
-
                     <AnimatePresence>
                       {showBreakdown && (
                         <motion.div
@@ -277,7 +263,9 @@ function SettleConfirmDialog({
                                     {': '}Paid {group.symbol}{r.paid.toLocaleString()}, Owes {group.symbol}{r.owes.toLocaleString()}
                                     {' → '}
                                     <span className={r.net >= 0 ? 'text-emerald-500 font-semibold' : 'text-rose-400 font-semibold'}>
-                                      {r.net >= 0 ? `+${group.symbol}${r.net.toLocaleString()} (to receive)` : `−${group.symbol}${Math.abs(r.net).toLocaleString()} (to pay)`}
+                                      {r.net >= 0
+                                        ? `+${group.symbol}${r.net.toLocaleString()} (to receive)`
+                                        : `−${group.symbol}${Math.abs(r.net).toLocaleString()} (to pay)`}
                                     </span>
                                   </div>
                                 ))}
@@ -293,12 +281,8 @@ function SettleConfirmDialog({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-4 py-4 flex gap-2.5 shrink-0">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl glass-button font-semibold text-sm"
-          >
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl glass-button font-semibold text-sm">
             Cancel
           </button>
           <button
@@ -334,7 +318,10 @@ function SettlementCard({
   const sym = currencySymbol(expense.currency);
   const payers = expense.payers.map(p => ({ memberName: p.member_name, amountPaid: p.amount_paid }));
   const participants = expense.participants.map(p => p.member_name);
-  const transfers = useMemo(() => calculateTransfers(expense.total_amount, payers, participants), [expense.total_amount, payers, participants]);
+  const transfers = useMemo(
+    () => calculateTransfers(expense.total_amount, payers, participants),
+    [expense.total_amount, payers, participants]
+  );
   const settledRecords = expense.settlements || [];
 
   const unsettledTransfers = transfers.filter(
@@ -342,20 +329,18 @@ function SettlementCard({
   );
 
   const statusColors = {
-    unsettled: "bg-destructive/10 text-destructive border-destructive/20",
-    partial: "bg-orange-500/10 text-orange-600 border-orange-500/20",
-    settled: "bg-green-500/10 text-green-600 border-green-500/20",
+    unsettled: 'bg-destructive/10 text-destructive border-destructive/20',
+    partial: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+    settled: 'bg-green-500/10 text-green-600 border-green-500/20',
   };
 
   return (
     <motion.div layout className="glass-panel rounded-3xl overflow-hidden mb-3">
-      {/* Card header row */}
       <div className="flex items-stretch">
         {/* Select checkbox */}
         <button
           onClick={e => { e.stopPropagation(); onToggleSelect(); }}
           className="pl-4 pr-2 flex items-center justify-center shrink-0 text-muted-foreground"
-          aria-label={isSelected ? 'Deselect expense' : 'Select expense'}
         >
           {isSelected
             ? <CheckSquare size={18} className="text-primary" />
@@ -382,7 +367,6 @@ function SettlementCard({
         </div>
       </div>
 
-      {/* Expanded section */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -392,7 +376,6 @@ function SettlementCard({
             className="border-t border-white/10 bg-white/30 dark:bg-black/20 overflow-hidden"
           >
             <div className="p-4 flex flex-col gap-3">
-              {/* Info row */}
               <div className="flex items-center justify-between text-xs text-muted-foreground bg-white/40 dark:bg-white/5 p-3 rounded-xl border border-white/10">
                 <div className="flex flex-col">
                   <span className="uppercase tracking-wider font-bold mb-0.5 text-[10px]">Equal Share</span>
@@ -406,7 +389,6 @@ function SettlementCard({
                 </div>
               </div>
 
-              {/* Per-transaction settle buttons */}
               <div>
                 <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-0.5">
                   Who Owes Whom
@@ -434,10 +416,17 @@ function SettlementCard({
                             <span className="font-medium text-xs truncate">{t.creditor}</span>
                           </div>
                           <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <span className="font-bold text-xs tabular-nums">{sym}{t.amount.toLocaleString()}</span>
+                            {/* Amount color: green if settled, red if not */}
+                            <span className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-full border ${
+                              isSettled
+                                ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                : 'bg-red-500/10 text-red-500 border-red-500/20'
+                            }`}>
+                              {sym}{t.amount.toLocaleString()}
+                            </span>
                             {isSettled ? (
                               <div className="bg-green-500/20 text-green-600 border border-green-500/20 px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1">
-                                <Check size={10} strokeWidth={3} /> Settled
+                                <Check size={10} strokeWidth={3} /> Done
                               </div>
                             ) : (
                               <button
@@ -469,7 +458,6 @@ function SettlementCard({
                 )}
               </div>
 
-              {/* Settle This Expense button */}
               {unsettledTransfers.length > 0 && (
                 <button
                   onClick={e => { e.stopPropagation(); onSettleSingle(); }}
@@ -521,32 +509,26 @@ export default function Settlement() {
     );
   };
 
-  // AppBar actions
-  const appBarAction = (
-    <div className="flex items-center gap-2">
-      {selectedIds.size > 0 && (
-        <button
-          onClick={() => setDialogExpenses(selectedExpenses)}
-          className="px-3 h-9 rounded-full glass-button text-xs font-bold flex items-center gap-1.5 bg-primary/10 text-primary border-primary/20"
-        >
-          <Check size={13} />
-          Settle {selectedIds.size}
-        </button>
-      )}
-      {unsettledExpenses.length > 0 && (
-        <button
-          onClick={() => setDialogExpenses(unsettledExpenses)}
-          className="px-3 h-9 rounded-full glass-button text-xs font-bold flex items-center gap-1.5 bg-primary/10 text-primary border-primary/20"
-        >
-          <Layers size={13} /> Settle All
-        </button>
-      )}
-    </div>
-  );
+  // "Settle Selected" — always visible in AppBar when there are unsettled expenses,
+  // disabled/dimmed when nothing is checked
+  const appBarAction = unsettledExpenses.length > 0 ? (
+    <button
+      onClick={() => selectedIds.size > 0 && setDialogExpenses(selectedExpenses)}
+      disabled={selectedIds.size === 0}
+      className={`px-3.5 h-9 rounded-full text-xs font-bold flex items-center gap-1.5 border-2 transition-all ${
+        selectedIds.size > 0
+          ? 'bg-primary text-white border-primary shadow-lg shadow-primary/30 scale-100'
+          : 'bg-transparent text-muted-foreground border-white/20 dark:border-white/15 opacity-45 cursor-default'
+      }`}
+    >
+      <Check size={13} strokeWidth={selectedIds.size > 0 ? 2.5 : 2} />
+      {selectedIds.size > 0 ? `Settle (${selectedIds.size})` : 'Settle Selected'}
+    </button>
+  ) : undefined;
 
   return (
     <div className="min-h-[100dvh] pt-24 pb-24 px-4 flex flex-col max-w-md mx-auto relative">
-      <AppBar title="Settlement" action={unsettledExpenses.length > 0 ? appBarAction : undefined} />
+      <AppBar title="Settlement" action={appBarAction} />
 
       {unsettledExpenses.length > 0 ? (
         <div className="flex flex-col pt-1">
@@ -577,7 +559,6 @@ export default function Settlement() {
             onConfirm={handleConfirm}
             onClose={() => setDialogExpenses(null)}
             isPending={settleMultiple.isPending}
-            identity={identity!}
           />
         )}
       </AnimatePresence>

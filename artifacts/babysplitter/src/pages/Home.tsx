@@ -121,7 +121,7 @@ export function HomePage() {
 
   return (
     <div className="min-h-[100dvh] pt-24 pb-24 px-4 flex flex-col max-w-md mx-auto relative">
-      <AppBar title="BabySplitter" />
+      <AppBar title="BabySplitter" showBell />
 
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
