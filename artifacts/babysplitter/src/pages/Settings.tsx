@@ -23,6 +23,7 @@ export default function Settings() {
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [profileExpanded, setProfileExpanded] = useState(false);
+  const [membersExpanded, setMembersExpanded] = useState(false);
 
   // ── Monthly stats ──────────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -88,6 +89,57 @@ export default function Settings() {
   return (
     <div className="min-h-[100dvh] pt-24 pb-24 px-4 flex flex-col max-w-md mx-auto relative gap-5">
       <AppBar title="Settings" showRefresh={false} />
+
+      {/* ── Profile Card — collapsible — FIRST ── */}
+      <div className="glass-panel rounded-3xl overflow-hidden">
+        <button
+          className="w-full px-5 py-4 flex items-center justify-between"
+          onClick={() => setProfileExpanded(v => !v)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full glass-panel-heavy border-primary/20 flex items-center justify-center text-lg font-bold bg-primary/5 text-primary shrink-0">
+              {identity?.charAt(0)}
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Identity</p>
+              <h2 className="text-base font-bold leading-tight">{identity}</h2>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" title="Synced" />
+            <div className="text-muted-foreground">
+              {profileExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </div>
+          </div>
+        </button>
+        <AnimatePresence>
+          {profileExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: 'easeInOut' }}
+              className="overflow-hidden"
+            >
+              <div className="border-t border-white/20 dark:border-white/10 px-5 pb-5 pt-4">
+                {canChangeIdentity && (
+                  <button
+                    onClick={() => setIsChangingIdentity(true)}
+                    className="glass-button w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2"
+                  >
+                    <User size={16} /> Change Identity (1 left)
+                  </button>
+                )}
+                {!canChangeIdentity && (
+                  <p className="text-xs text-muted-foreground text-center py-1">
+                    Identity cannot be changed again.
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* ── Monthly Stats Card ── */}
       <div className="glass-panel rounded-3xl p-5 flex flex-col gap-4 overflow-hidden relative">
@@ -165,60 +217,6 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* ── Profile Card — collapsible ── */}
-      <div className="glass-panel rounded-3xl overflow-hidden">
-        {/* Collapsed header — always visible */}
-        <button
-          className="w-full px-5 py-4 flex items-center justify-between"
-          onClick={() => setProfileExpanded(v => !v)}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full glass-panel-heavy border-primary/20 flex items-center justify-center text-lg font-bold bg-primary/5 text-primary shrink-0">
-              {identity?.charAt(0)}
-            </div>
-            <div className="text-left">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Identity</p>
-              <h2 className="text-base font-bold leading-tight">{identity}</h2>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]" title="Synced" />
-            <div className="text-muted-foreground">
-              {profileExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </div>
-          </div>
-        </button>
-
-        {/* Expanded content */}
-        <AnimatePresence>
-          {profileExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.22, ease: 'easeInOut' }}
-              className="overflow-hidden"
-            >
-              <div className="border-t border-white/20 dark:border-white/10 px-5 pb-5 pt-4">
-                {canChangeIdentity && (
-                  <button
-                    onClick={() => setIsChangingIdentity(true)}
-                    className="glass-button w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2"
-                  >
-                    <User size={16} /> Change Identity (1 left)
-                  </button>
-                )}
-                {!canChangeIdentity && (
-                  <p className="text-xs text-muted-foreground text-center py-1">
-                    Identity cannot be changed again.
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
       {/* ── Theme Card ── */}
       <div className="glass-panel rounded-3xl p-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -243,84 +241,104 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* ── Members Card ── */}
-      <div className="glass-panel rounded-3xl p-5 flex flex-col gap-4">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
-            <Users size={20} />
+      {/* ── Members Card — collapsible ── */}
+      <div className="glass-panel rounded-3xl overflow-hidden">
+        <button
+          className="w-full px-5 py-4 flex items-center justify-between"
+          onClick={() => setMembersExpanded(v => !v)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
+              <Users size={20} />
+            </div>
+            <span className="font-semibold text-base">Members</span>
           </div>
-          <span className="font-semibold text-lg">Members</span>
-        </div>
+          <div className="text-muted-foreground">
+            {membersExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        </button>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Add new member..."
-            value={newMemberName}
-            onChange={e => setNewMemberName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleAddMember()}
-            className="glass-input flex-1 text-sm py-3"
-          />
-          <button
-            onClick={handleAddMember}
-            disabled={addMember.isPending || !newMemberName.trim()}
-            className="glass-button bg-primary/10 text-primary border-primary/20 px-4 rounded-xl font-medium"
-          >
-            <Plus size={18} />
-          </button>
-        </div>
-
-        <div className="flex flex-col mt-1 divide-y divide-white/10">
-          {members?.map(m => (
-            <div key={m.id} className="py-3 flex items-center justify-between">
-              {editingMemberId === m.id ? (
-                <div className="flex gap-2 flex-1 mr-2">
+        <AnimatePresence>
+          {membersExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: 'easeInOut' }}
+              className="overflow-hidden"
+            >
+              <div className="border-t border-white/20 dark:border-white/10 px-5 pb-5 pt-4 flex flex-col gap-4">
+                <div className="flex gap-2">
                   <input
                     type="text"
-                    value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    className="glass-input flex-1 py-1 px-3 text-sm h-8"
-                    autoFocus
+                    placeholder="Add new member..."
+                    value={newMemberName}
+                    onChange={e => setNewMemberName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddMember()}
+                    className="glass-input flex-1 text-sm py-3"
                   />
-                  <button onClick={() => handleRename(m.id)} className="text-green-500 bg-green-500/10 p-1.5 rounded-lg border border-green-500/20">
-                    <CheckIcon size={14} />
-                  </button>
-                  <button onClick={() => setEditingMemberId(null)} className="text-muted-foreground bg-white/10 p-1.5 rounded-lg">
-                    <X size={14} />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <span className="font-medium">{m.current_name}</span>
-                  {m.is_preset && (
-                    <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                      Preset
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {editingMemberId !== m.id && (
-                <div className="flex items-center gap-1">
                   <button
-                    onClick={() => { setEditingMemberId(m.id); setEditName(m.current_name); }}
-                    className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={handleAddMember}
+                    disabled={addMember.isPending || !newMemberName.trim()}
+                    className="glass-button bg-primary/10 text-primary border-primary/20 px-4 rounded-xl font-medium"
                   >
-                    <Pencil size={14} />
+                    <Plus size={18} />
                   </button>
-                  {!m.is_preset && (
-                    <button
-                      onClick={() => { if (confirm(`Delete ${m.current_name}?`)) deleteMember.mutate(m.id); }}
-                      className="p-2 text-destructive/70 hover:text-destructive transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+                <div className="flex flex-col divide-y divide-white/10">
+                  {members?.map(m => (
+                    <div key={m.id} className="py-3 flex items-center justify-between">
+                      {editingMemberId === m.id ? (
+                        <div className="flex gap-2 flex-1 mr-2">
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={e => setEditName(e.target.value)}
+                            className="glass-input flex-1 py-1 px-3 text-sm h-8"
+                            autoFocus
+                          />
+                          <button onClick={() => handleRename(m.id)} className="text-green-500 bg-green-500/10 p-1.5 rounded-lg border border-green-500/20">
+                            <CheckIcon size={14} />
+                          </button>
+                          <button onClick={() => setEditingMemberId(null)} className="text-muted-foreground bg-white/10 p-1.5 rounded-lg">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium">{m.current_name}</span>
+                          {m.is_preset && (
+                            <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
+                              Preset
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {editingMemberId !== m.id && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => { setEditingMemberId(m.id); setEditName(m.current_name); }}
+                            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          {!m.is_preset && (
+                            <button
+                              onClick={() => { if (confirm(`Delete ${m.current_name}?`)) deleteMember.mutate(m.id); }}
+                              className="p-2 text-destructive/70 hover:text-destructive transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── About ── */}

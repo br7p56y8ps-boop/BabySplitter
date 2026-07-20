@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { AppBar } from '@/components/AppBar';
 import { BottomNav } from '@/components/BottomNav';
-import { TabBackground } from '@/components/TabBackground';
 import { useExpenses } from '@/hooks/useQueries';
 import { useMutations } from '@/hooks/useMutations';
 import { calculateTransfers } from '@/lib/settlementEngine';
@@ -529,7 +528,6 @@ export default function Settlement() {
 
   return (
     <div className="min-h-[100dvh] pt-24 pb-24 px-4 flex flex-col max-w-md mx-auto relative">
-      <TabBackground tab="settlement" />
       <AppBar title="Settlement" action={appBarAction} />
 
       {unsettledExpenses.length > 0 ? (

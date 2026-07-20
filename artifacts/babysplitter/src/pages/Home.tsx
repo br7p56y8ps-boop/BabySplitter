@@ -2,7 +2,6 @@ import { useState } from "react";
 import { AppBar } from "@/components/AppBar";
 import { BottomNav } from "@/components/BottomNav";
 import { AddExpenseModal } from "@/components/AddExpenseModal";
-import { TabBackground } from "@/components/TabBackground";
 import { useExpenses } from "@/hooks/useQueries";
 import { useMutations } from "@/hooks/useMutations";
 import { format } from "date-fns";
@@ -118,11 +117,13 @@ export function HomePage() {
   const [editingExpense, setEditingExpense] = useState<ExpenseWithDetails | null>(null);
 
   // Only show unsettled / partial — fully settled expenses live in History
-  const visibleExpenses = (expenses || []).filter(e => e.status !== 'settled');
+  // Sort latest date first
+  const visibleExpenses = (expenses || [])
+    .filter(e => e.status !== 'settled')
+    .sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
 
   return (
     <div className="min-h-[100dvh] pt-24 pb-24 px-4 flex flex-col max-w-md mx-auto relative">
-      <TabBackground tab="home" />
       <AppBar title="BabySplitter" showBell />
 
       {isLoading ? (

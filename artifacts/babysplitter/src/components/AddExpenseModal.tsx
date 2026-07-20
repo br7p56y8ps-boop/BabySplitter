@@ -161,12 +161,12 @@ export function AddExpenseModal({ isOpen, onClose, editExpense }: Props) {
             <select
               value={currency}
               onChange={e => setCurrency(e.target.value)}
-              className="glass-input w-[3.25rem] shrink-0 text-sm text-center appearance-none cursor-pointer font-bold"
+              className="glass-input w-[5.5rem] shrink-0 text-xs cursor-pointer font-semibold"
               disabled={!!editExpense}
             >
-              <option value="BDT">৳</option>
-              <option value="INR">₹</option>
-              <option value="USD">$</option>
+              <option value="BDT">৳ Taka</option>
+              <option value="INR">₹ INR</option>
+              <option value="USD">$ USD</option>
             </select>
 
             {/* Auto-calculated total */}
