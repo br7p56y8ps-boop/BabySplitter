@@ -50,27 +50,30 @@ function calcNetGroups(expenses: ExpenseWithDetails[]): NetGroup[] {
 
   return Object.entries(byCurrency).map(([currency, exps]) => {
     const sym = currencySymbol(currency);
-    const balances: Record<string, { paid: number; owes: number }> = {};
+    const rawTx = buildRawTransactions(exps);
+    const netBalances: Record<string, number> = {};
 
-    for (const expense of exps) {
-      if (expense.participants.length === 0) continue;
-      const share = expense.total_amount / expense.participants.length;
-      expense.participants.forEach(p => {
-        if (!balances[p.member_name]) balances[p.member_name] = { paid: 0, owes: 0 };
-        balances[p.member_name].owes += share;
-      });
-      expense.payers.forEach(p => {
-        if (!balances[p.member_name]) balances[p.member_name] = { paid: 0, owes: 0 };
-        balances[p.member_name].paid += p.amount_paid;
-      });
-    }
+    // Collect all member names from expenses in this currency group
+    const membersSet = new Set<string>();
+    exps.forEach(e => {
+      e.participants.forEach(p => membersSet.add(p.member_name));
+      e.payers.forEach(p => membersSet.add(p.member_name));
+    });
 
-    const personBreakdown: PersonRow[] = Object.entries(balances)
-      .map(([name, b]) => ({
+    membersSet.forEach(m => netBalances[m] = 0);
+
+    // Build net balances strictly from the remaining unsettled transfers
+    rawTx.forEach(tx => {
+      netBalances[tx.debtor] = (netBalances[tx.debtor] || 0) - tx.amount;
+      netBalances[tx.creditor] = (netBalances[tx.creditor] || 0) + tx.amount;
+    });
+
+    const personBreakdown: PersonRow[] = Object.entries(netBalances)
+      .map(([name, net]) => ({
         name,
-        paid: parseFloat(b.paid.toFixed(2)),
-        owes: parseFloat(b.owes.toFixed(2)),
-        net: parseFloat((b.paid - b.owes).toFixed(2)),
+        paid: 0,
+        owes: 0,
+        net: parseFloat(net.toFixed(2)),
       }))
       .sort((a, b) => b.net - a.net);
 
