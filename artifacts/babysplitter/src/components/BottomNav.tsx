@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Receipt, MessageCircle, Clock, Settings } from "lucide-react";
+import { House, Banknote, MessagesSquare, BookOpen, SlidersHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
 import { useChatMessages } from "@/hooks/useQueries";
@@ -10,7 +10,6 @@ export function BottomNav() {
   const { identity } = useAuth();
   const { data: messages } = useChatMessages();
 
-  // Track last time the user was on the Chat tab
   const [lastReadAt, setLastReadAt] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,7 +18,6 @@ export function BottomNav() {
     }
   }, [identity]);
 
-  // When navigating to /chat, mark all as read
   useEffect(() => {
     if (location === '/chat' && identity) {
       const now = new Date().toISOString();
@@ -28,7 +26,6 @@ export function BottomNav() {
     }
   }, [location, identity]);
 
-  // Count unread: messages not from self, newer than last read timestamp
   const unreadCount = useMemo(() => {
     if (!messages || !identity) return 0;
     return messages.filter(
@@ -38,11 +35,11 @@ export function BottomNav() {
   }, [messages, identity, lastReadAt]);
 
   const navItems = [
-    { path: "/home", icon: Home, label: "Home" },
-    { path: "/settlement", icon: Receipt, label: "Settle" },
-    { path: "/chat", icon: MessageCircle, label: "Chat" },
-    { path: "/history", icon: Clock, label: "History" },
-    { path: "/settings", icon: Settings, label: "Settings" },
+    { path: "/home",       icon: House,             label: "Home"    },
+    { path: "/settlement", icon: Banknote,           label: "Settle"  },
+    { path: "/chat",       icon: MessagesSquare,     label: "Chat"    },
+    { path: "/history",    icon: BookOpen,           label: "History" },
+    { path: "/settings",   icon: SlidersHorizontal,  label: "More"    },
   ];
 
   return (
@@ -61,11 +58,10 @@ export function BottomNav() {
               className="relative flex flex-col items-center justify-center p-2 w-16 h-14 cursor-pointer outline-none tap-highlight-transparent"
             >
               <div className="relative z-10 flex flex-col items-center gap-1">
-                {/* Icon with optional unread badge */}
                 <div className="relative">
                   <Icon
-                    size={24}
-                    strokeWidth={isActive ? 2.5 : 2}
+                    size={22}
+                    strokeWidth={isActive ? 2.2 : 1.6}
                     className={`transition-colors duration-300 ${isActive ? "text-primary" : "text-muted-foreground"}`}
                   />
                   {badge > 0 && (

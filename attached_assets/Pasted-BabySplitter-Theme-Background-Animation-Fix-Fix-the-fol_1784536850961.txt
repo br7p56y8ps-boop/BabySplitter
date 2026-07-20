@@ -1,0 +1,34 @@
+BabySplitter — Theme & Background Animation Fix
+Fix the following — visual/theme only, no logic or feature changes:
+1. True glassmorphism on all cards/components
+Current cards are solid, flat blocks — not transparent. Apply real glass-style transparency
+across every card, tab bar, dialog, and button:
+Background opacity ~50-60% (not solid), with backdrop blur applied so content behind
+subtly shows through
+Thin, soft-glow border (1px, semi-transparent white/light) on each card edge
+Subtle inner highlight at the top edge of cards to simulate glass catching light
+Soft drop shadow beneath cards for depth/floating effect
+Apply consistently to: expense cards, settlement cards, history cards, chat bubbles,
+dialogs/modals, bottom nav bar, top app bar
+2. Modern icon set
+Replace the current bottom nav and top bar icons (Home, Settle, Chat, History, Settings,
+bell, refresh) with a modern, consistent icon set — thin-stroke, rounded, contemporary style
+(similar to Lucide, Phosphor, or SF Symbols), not the current dated outline icons.
+3. Background ambient animation (per tab, subtle/watermark￾style)
+Add a very low-opacity, slow-moving background animation unique to each tab — purely
+decorative, sitting behind all cards/content, never interfering with readability or tap targets.
+Suggested opacity: ~5-10%, slow drift/loop.
+Home: gentle animation suggesting money/coins flowing or being spent
+Settlement: a lighthearted animation of two figures “arguing” playfully over who pays
+Chat: two figures/speech-bubble animation suggesting an ongoing conversation
+History: a wistful animation suggesting money spent and looking back at it (e.g. fading
+coin trail, a figure looking at a receipt)
+Settings: no background animation here
+4. Settings tab redesign
+Add a new card above the Member Profile card — roughly double the height of a normal
+profile card — showing monthly statistics for the whole group (e.g. total spent, most
+active spender, expenses this month). Include a small animated line/bar graph within this
+card showing spending trend going up/down over the month.
+Make the Member Profile card collapsible, collapsed by default — tap to expand and
+see full profile details.
+Everything else should remain exactly as is — no other logic, calculation, or feature changes.

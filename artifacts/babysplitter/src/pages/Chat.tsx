@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AppBar } from '@/components/AppBar';
 import { BottomNav } from '@/components/BottomNav';
+import { TabBackground } from '@/components/TabBackground';
 import { useChatMessages } from '@/hooks/useQueries';
 import { useMutations } from '@/hooks/useMutations';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,6 +29,7 @@ export default function Chat() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col max-w-md mx-auto relative pt-20 pb-36">
+      <TabBackground tab="chat" />
       <AppBar title="Chat" showRefresh={false} />
       
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 hide-scrollbar">

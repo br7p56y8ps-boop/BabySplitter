@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AppBar } from '@/components/AppBar';
 import { BottomNav } from '@/components/BottomNav';
+import { TabBackground } from '@/components/TabBackground';
 import { useExpenses } from '@/hooks/useQueries';
 import { useMutations } from '@/hooks/useMutations';
 import { useAuth } from '@/hooks/useAuth';
@@ -211,6 +212,7 @@ export default function History() {
 
   return (
     <div className="min-h-[100dvh] pt-24 pb-24 px-4 flex flex-col max-w-md mx-auto relative">
+      <TabBackground tab="history" />
       <AppBar title="History" />
 
       {settledExpenses.length > 0 ? (
