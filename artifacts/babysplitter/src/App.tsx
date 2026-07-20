@@ -1,3 +1,4 @@
+import { WhatsNewDialog } from "@/components/WhatsNewDialog";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
