@@ -347,7 +347,10 @@ export default function Settings() {
           <Info size={20} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <span className="font-bold">BabySplitter v1.0</span>
+          {(() => {
+            const metaVersion = document.querySelector("meta[name='app-version']")?.getAttribute("content");
+            return <span className="font-bold">BabySplitter {metaVersion || 'v3.7'}</span>;
+          })()}
           <p className="text-xs text-muted-foreground leading-relaxed">
             A premium, personal shared expense tracker built for close friends.
             Real-time sync powered by Supabase.
