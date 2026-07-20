@@ -53,6 +53,7 @@ function App() {
             <Router />
           </WouterRouter>
           <Toaster />
+      <WhatsNewDialog />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
