@@ -2,17 +2,16 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useExpenses, useMembers } from '@/hooks/useQueries';
 import { useMutations } from '@/hooks/useMutations';
-import { useLocation } from 'wouter';
-import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Users, Info, UserPlus, RefreshCw, Moon, Sun, ChevronDown, ChevronUp } from 'lucide-react';
+import { useLocation, Link } from 'wouter';
+import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Users, Info, UserPlus, RefreshCw, Moon, Sun, ChevronDown, ChevronUp, Home, ArrowLeftRight, MessageSquare, BookOpen, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Navigation from '@/components/Navigation';
 
 export default function Settings() {
   const { identity } = useAuth();
   const { data: expenses } = useExpenses();
   const { data: members } = useMembers();
   const { addMember } = useMutations();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   // Collapsible states
   const [showIdentityDetails, setShowIdentityDetails] = useState(false);
@@ -137,6 +136,15 @@ export default function Settings() {
       }
     });
   };
+
+  // Nav items configuration
+  const navItems = [
+    { href: '/', label: 'Home', icon: Home },
+    { href: '/settle', label: 'Settle', icon: ArrowLeftRight },
+    { href: '/chat', label: 'Chat', icon: MessageSquare },
+    { href: '/history', label: 'History', icon: BookOpen },
+    { href: '/settings', label: 'More', icon: SlidersHorizontal },
+  ];
 
   return (
     <div className="min-h-[100dvh] bg-black text-white pb-36 p-5 max-w-md mx-auto flex flex-col gap-4 relative">
@@ -384,8 +392,31 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Fixed Navigation Bar */}
-      <Navigation />
+      {/* Mobile Bottom Navigation Bar matching original screenshot styling */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-2.5 z-50 max-w-md mx-auto flex items-center justify-between">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location === item.href || (item.href === '/settings' && location === '/settings');
+          return (
+            <Link key={item.href} href={item.href}>
+              <button
+                className={`flex flex-col items-center gap-1 transition-all ${
+                  isActive ? 'text-primary' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                <div
+                  className={`p-1.5 rounded-2xl transition-all ${
+                    isActive ? 'bg-primary/20 text-primary' : 'bg-transparent'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-medium tracking-tight">{item.label}</span>
+              </button>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
