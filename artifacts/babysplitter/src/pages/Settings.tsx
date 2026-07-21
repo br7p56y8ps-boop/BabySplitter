@@ -24,18 +24,21 @@ export default function Settings() {
   const [newMemberName, setNewMemberName] = useState('');
   const [memberMessage, setMemberMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Theme state
+  // Theme state synced with current document class
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    return document.documentElement.classList.contains('dark') || true;
+    return document.documentElement.classList.contains('dark');
   });
 
-  useEffect(() => {
-    if (isDarkMode) {
+  const toggleTheme = (dark: boolean) => {
+    setIsDarkMode(dark);
+    if (dark) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
-  }, [isDarkMode]);
+  };
 
   // Current month statistics computation
   const stats = useMemo(() => {
@@ -137,7 +140,6 @@ export default function Settings() {
     });
   };
 
-  // Nav items configuration
   const navItems = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/settle', label: 'Settle', icon: ArrowLeftRight },
@@ -147,11 +149,11 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-black text-white pb-36 p-4 flex flex-col gap-4 w-full">
+    <div className="min-h-[100dvh] bg-background text-foreground pb-36 p-4 flex flex-col gap-4 w-full">
       <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
 
-      {/* 1. Identity / Selected Profile Management Card */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col gap-3">
+      {/* 1. Identity Card */}
+      <div className="bg-card border border-border rounded-3xl p-5 flex flex-col gap-3">
         <div 
           onClick={() => setShowIdentityDetails(!showIdentityDetails)}
           className="flex items-center justify-between cursor-pointer"
@@ -161,13 +163,13 @@ export default function Settings() {
               {identity?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div>
-              <p className="text-[10px] tracking-wider text-white/40 font-bold uppercase">Identity</p>
+              <p className="text-[10px] tracking-wider opacity-50 font-bold uppercase">Identity</p>
               <p className="text-base font-bold">{identity || 'Select Profile'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-            {showIdentityDetails ? <ChevronUp className="w-4 h-4 text-white/50" /> : <ChevronDown className="w-4 h-4 text-white/50" />}
+            {showIdentityDetails ? <ChevronUp className="w-4 h-4 opacity-50" /> : <ChevronDown className="w-4 h-4 opacity-50" />}
           </div>
         </div>
 
@@ -177,7 +179,7 @@ export default function Settings() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="flex flex-col gap-3 pt-3 border-t border-white/10 overflow-hidden"
+              className="flex flex-col gap-3 pt-3 border-t border-border overflow-hidden"
             >
               <div className="flex items-center justify-between">
                 <button
@@ -192,7 +194,7 @@ export default function Settings() {
                     localStorage.removeItem('babysplitter_identity');
                     setLocation('/');
                   }}
-                  className="text-xs bg-red-500/20 text-red-300 border border-red-500/30 px-3 py-1.5 rounded-xl font-semibold hover:bg-red-500/30 transition-colors"
+                  className="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-xl font-semibold hover:bg-red-500/30 transition-colors"
                 >
                   Switch Profile
                 </button>
@@ -207,7 +209,7 @@ export default function Settings() {
                     placeholder="Current PIN"
                     value={currentPinInput}
                     onChange={e => setCurrentPinInput(e.target.value)}
-                    className="w-full bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-primary"
+                    className="w-full bg-input border border-border rounded-xl px-3 py-2 text-xs text-foreground placeholder:opacity-40 focus:outline-none focus:border-primary"
                   />
                   <input
                     type="password"
@@ -216,11 +218,11 @@ export default function Settings() {
                     placeholder="New PIN (4+ digits)"
                     value={newPinInput}
                     onChange={e => setNewPinInput(e.target.value)}
-                    className="w-full bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-primary"
+                    className="w-full bg-input border border-border rounded-xl px-3 py-2 text-xs text-foreground placeholder:opacity-40 focus:outline-none focus:border-primary"
                   />
                   {statusMessage && (
                     <div className={`flex items-center gap-2 p-2 rounded-xl text-xs ${
-                      statusMessage.type === 'success' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'
+                      statusMessage.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
                     }`}>
                       {statusMessage.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
                       <span>{statusMessage.text}</span>
@@ -228,7 +230,7 @@ export default function Settings() {
                   )}
                   <button
                     type="submit"
-                    className="w-full bg-primary text-white font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-primary/25"
+                    className="w-full bg-primary text-primary-foreground font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-primary/25"
                   >
                     <KeyRound className="w-3.5 h-3.5" />
                     <span>Save New PIN</span>
@@ -240,22 +242,22 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
-      {/* 2. Statistics & Group Spending Card */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col gap-4">
+      {/* 2. Group Spending Card */}
+      <div className="bg-card border border-border rounded-3xl p-5 flex flex-col gap-4">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] tracking-wider text-white/40 font-bold uppercase">This Month</p>
-            <h2 className="text-base font-medium text-white/80">Group Spending</h2>
+            <p className="text-[10px] tracking-wider opacity-50 font-bold uppercase">This Month</p>
+            <h2 className="text-base font-medium opacity-90">Group Spending</h2>
           </div>
           <div className="text-right">
             <span className="text-2xl font-bold font-mono">৳{stats.totalSpending.toLocaleString()}</span>
-            <p className="text-[10px] text-white/40">{stats.expenseCount} expense{stats.expenseCount === 1 ? '' : 's'}</p>
+            <p className="text-[10px] opacity-50">{stats.expenseCount} expense{stats.expenseCount === 1 ? '' : 's'}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col justify-between">
-            <p className="text-[10px] uppercase font-bold text-white/40 flex items-center gap-1">
+          <div className="bg-secondary/40 border border-border rounded-2xl p-3 flex flex-col justify-between">
+            <p className="text-[10px] uppercase font-bold opacity-50 flex items-center gap-1">
               <TrendingUp className="w-3 h-3 text-primary" /> Top Spender
             </p>
             <div className="mt-2">
@@ -264,17 +266,17 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col justify-between">
-            <p className="text-[10px] uppercase font-bold text-white/40">Expenses</p>
+          <div className="bg-secondary/40 border border-border rounded-2xl p-3 flex flex-col justify-between">
+            <p className="text-[10px] uppercase font-bold opacity-50">Expenses</p>
             <div className="mt-2">
               <p className="text-xl font-bold font-mono">{stats.expenseCount}</p>
-              <p className="text-[10px] text-white/40">this month</p>
+              <p className="text-[10px] opacity-50">this month</p>
             </div>
           </div>
         </div>
 
-        <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
-          <p className="text-[10px] uppercase font-bold text-white/40 tracking-wider">Last 7 Days</p>
+        <div className="pt-2 border-t border-border flex flex-col gap-2">
+          <p className="text-[10px] uppercase font-bold opacity-50 tracking-wider">Last 7 Days</p>
           <div className="grid grid-cols-7 gap-1.5 items-end h-16 pt-2">
             {last7Days.map((d, i) => (
               <div key={i} className="flex flex-col items-center gap-1 h-full justify-end">
@@ -283,7 +285,7 @@ export default function Settings() {
                   style={{ height: `${d.heightPercent}%` }}
                   title={`${d.dayName}: ৳${d.dayTotal}`}
                 />
-                <span className="text-[9px] text-white/40 font-medium">{d.dayName}</span>
+                <span className="text-[9px] opacity-50 font-medium">{d.dayName}</span>
               </div>
             ))}
           </div>
@@ -291,24 +293,24 @@ export default function Settings() {
       </div>
 
       {/* 3. Appearance Card */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-4 flex items-center justify-between">
+      <div className="bg-card border border-border rounded-3xl p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-white">
-            {isDarkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-amber-400" />}
+          <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center">
+            {isDarkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-amber-500" />}
           </div>
           <span className="text-base font-medium">Appearance</span>
         </div>
 
-        <div className="bg-black/60 border border-white/10 p-1 rounded-2xl flex items-center gap-1">
+        <div className="bg-secondary/60 border border-border p-1 rounded-2xl flex items-center gap-1">
           <button
-            onClick={() => setIsDarkMode(false)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${!isDarkMode ? 'bg-white text-black shadow-sm' : 'text-white/50 hover:text-white'}`}
+            onClick={() => toggleTheme(false)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${!isDarkMode ? 'bg-background text-foreground shadow-sm' : 'opacity-50 hover:opacity-100'}`}
           >
             Light
           </button>
           <button
-            onClick={() => setIsDarkMode(true)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isDarkMode ? 'bg-white/15 text-white shadow-sm' : 'text-white/50 hover:text-white'}`}
+            onClick={() => toggleTheme(true)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isDarkMode ? 'bg-primary text-primary-foreground shadow-sm' : 'opacity-50 hover:opacity-100'}`}
           >
             Dark
           </button>
@@ -316,18 +318,18 @@ export default function Settings() {
       </div>
 
       {/* 4. Members Card */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col gap-3">
+      <div className="bg-card border border-border rounded-3xl p-5 flex flex-col gap-3">
         <div 
           onClick={() => setShowMembersList(!showMembersList)}
           className="flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center">
               <Users className="w-5 h-5 text-primary" />
             </div>
             <span className="text-base font-medium">Members</span>
           </div>
-          {showMembersList ? <ChevronUp className="w-4 h-4 text-white/50" /> : <ChevronDown className="w-4 h-4 text-white/50" />}
+          {showMembersList ? <ChevronUp className="w-4 h-4 opacity-50" /> : <ChevronDown className="w-4 h-4 opacity-50" />}
         </div>
 
         <AnimatePresence>
@@ -336,37 +338,37 @@ export default function Settings() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="flex flex-col gap-3 pt-3 border-t border-white/10 overflow-hidden"
+              className="flex flex-col gap-3 pt-3 border-t border-border overflow-hidden"
             >
               <div className="flex flex-wrap gap-2">
                 {members?.map(m => (
-                  <span key={m.id} className="text-xs bg-white/10 px-3 py-1.5 rounded-xl font-medium text-white/90">
+                  <span key={m.id} className="text-xs bg-secondary px-3 py-1.5 rounded-xl font-medium opacity-90">
                     {m.current_name} {m.is_preset && '★'}
                   </span>
                 ))}
               </div>
 
-              <form onSubmit={handleAddMember} className="flex flex-col gap-2 pt-2 border-t border-white/10">
-                <label className="text-[10px] uppercase font-bold text-white/40">Add Permanent Member</label>
+              <form onSubmit={handleAddMember} className="flex flex-col gap-2 pt-2 border-t border-border">
+                <label className="text-[10px] uppercase font-bold opacity-50">Add Permanent Member</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder="Member name"
                     value={newMemberName}
                     onChange={e => setNewMemberName(e.target.value)}
-                    className="flex-1 bg-black/50 border border-white/20 rounded-2xl px-3.5 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-primary"
+                    className="flex-1 bg-input border border-border rounded-2xl px-3.5 py-2 text-xs text-foreground placeholder:opacity-40 focus:outline-none focus:border-primary"
                   />
                   <button
                     type="submit"
                     disabled={addMember.isPending || !newMemberName.trim()}
-                    className="bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-3.5 py-2 rounded-2xl text-xs font-semibold flex items-center gap-1 shrink-0"
+                    className="bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-3.5 py-2 rounded-2xl text-xs font-semibold flex items-center gap-1 shrink-0"
                   >
                     {addMember.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
                     <span>Add</span>
                   </button>
                 </div>
                 {memberMessage && (
-                  <p className={`text-xs ${memberMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <p className={`text-xs ${memberMessage.type === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
                     {memberMessage.text}
                   </p>
                 )}
@@ -377,23 +379,23 @@ export default function Settings() {
       </div>
 
       {/* 5. App Info Card */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex items-start gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-white shrink-0 mt-0.5">
+      <div className="bg-card border border-border rounded-3xl p-5 flex items-start gap-3">
+        <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center shrink-0 mt-0.5">
           <Info className="w-5 h-5 text-primary" />
         </div>
         <div className="flex flex-col gap-1">
           <h2 className="font-bold text-sm">BabySplitter v3.7</h2>
-          <p className="text-xs text-white/50 leading-relaxed">
+          <p className="text-xs opacity-60 leading-relaxed">
             A premium, personal shared expense tracker built for close friends. Real-time sync powered by Supabase.
           </p>
-          <p className="text-xs text-white/50 mt-1">
+          <p className="text-xs opacity-60 mt-1">
             Developed by <span className="text-primary font-semibold">benzavraar</span>
           </p>
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation Bar matching global layout */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-2.5 z-50 flex items-center justify-around">
+      {/* Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-border px-6 py-2.5 z-50 flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href || (item.href === '/settings' && location === '/settings');
@@ -401,7 +403,7 @@ export default function Settings() {
             <Link key={item.href} href={item.href}>
               <button
                 className={`flex flex-col items-center gap-1 transition-all ${
-                  isActive ? 'text-primary' : 'text-white/40 hover:text-white/70'
+                  isActive ? 'text-primary' : 'opacity-50 hover:opacity-100'
                 }`}
               >
                 <div
