@@ -211,9 +211,10 @@ function SettleConfirmDialog({
             </div>
           ))}
 
-          {/* How is this calculated? */}
+                    {/* How is this calculated? */}
           <div className="mt-2 mb-1 rounded-2xl border border-white/15 dark:border-white/8 bg-white/10 dark:bg-white/3 overflow-hidden">
             <button
+              type="button"
               onClick={() => setShowExplanation(v => !v)}
               className="w-full flex items-center justify-between px-3 py-2.5 text-[11px] font-semibold text-muted-foreground"
             >
@@ -234,30 +235,31 @@ function SettleConfirmDialog({
                 >
                   <div className="px-3 pb-3 flex flex-col gap-2">
                     <p className="text-[10px] leading-relaxed text-muted-foreground">
-                      Instead of playing financial ping-pong and settling every single receipt manually, it is calculated with each overall balance (total spent minus their actual fair share). Then it net those totals together so you make the absolute minimum number of transfers. Same final result, zero unnecessary payment chaos!
+                      Instead of playing financial ping-pong and settling every single receipt manually, it is calculated with each overall balance (total spent minus their actual fair share). Then it nets those totals together so you make the absolute minimum number of transfers. Same final result, zero unnecessary payment chaos!
                     </p>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-        </div>
+          </div>
 
-        <div className="px-4 py-4 flex gap-2.5 shrink-0">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl glass-button font-semibold text-sm">
-            Cancel
-          </button>
-          <button
-            onClick={() => onConfirm(rawTransactions)}
-            disabled={isPending || rawTransactions.length === 0}
-            className="flex-1 py-2.5 rounded-xl glass-button-primary font-semibold text-sm disabled:opacity-50"
-          >
-            {isPending ? 'Settling…' : 'Confirm'}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
+          <div className="px-4 py-4 flex gap-2.5 shrink-0">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl glass-button font-semibold text-sm">
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(rawTransactions)}
+              disabled={isPending || rawTransactions.length === 0}
+              className="flex-1 py-2.5 rounded-xl glass-button-primary font-semibold text-sm disabled:opacity-50"
+            >
+              {isPending ? 'Settling…' : 'Confirm'}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
 // ─── SettlementCard ───────────────────────────────────────────────────────────
 
