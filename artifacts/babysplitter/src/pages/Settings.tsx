@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useExpenses, useMembers } from '@/hooks/useQueries';
 import { useMutations } from '@/hooks/useMutations';
+import { supabase } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocation, Link } from 'wouter';
 import { Shield, KeyRound, CheckCircle2, AlertCircle, Users, UserPlus, RefreshCw, Moon, Sun, ChevronDown, ChevronUp, Home, ArrowLeftRight, MessageSquare, BookOpen, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +14,7 @@ export default function Settings() {
   const { data: members } = useMembers();
   const { addMember } = useMutations();
   const [location, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   // Collapsible states
   const [showIdentityDetails, setShowIdentityDetails] = useState(false);
@@ -19,10 +22,16 @@ export default function Settings() {
   const [currentPinInput, setCurrentPinInput] = useState('');
   const [newPinInput, setNewPinInput] = useState('');
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isSubmittingPin, setIsSubmittingPin] = useState(false);
 
   const [showMembersList, setShowMembersList] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [memberMessage, setMemberMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Current Logged-in Member profile from Supabase
+  const currentMember = members?.find(
+    (m: any) => (m.current_name || m.name) === identity
+  );
 
   // Theme state synced with current document class
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -49,20 +58,17 @@ export default function Settings() {
     let unsettledCount = 0;
     let settledCount = 0;
 
-    // Track active unique dates and expense density across ALL past records
     const uniqueDatesSet = new Set<string>();
     const dailyCountMap: Record<string, number> = {};
     let earliestDate: Date | null = null;
     let latestDate: Date | null = null;
 
     list.forEach((e: any) => {
-      // 🛠️ Robust check for amount across different DB field names & string types
       const rawAmount = e.amount ?? e.total_amount ?? e.cost ?? 0;
       const amt = typeof rawAmount === 'string' ? parseFloat(rawAmount) || 0 : Number(rawAmount || 0);
 
       totalExpended += amt;
 
-      // 🛠️ Robust check for settled status
       const isSettled = Boolean(e.is_settled || e.settled || e.status === 'settled');
 
       if (isSettled) {
@@ -72,7 +78,6 @@ export default function Settings() {
         totalUnsettledAmount += amt;
       }
 
-      // Track all-time logging dates
       const rawDate = e.created_at || e.date || e.timestamp;
       if (rawDate) {
         const d = new Date(rawDate);
@@ -87,30 +92,24 @@ export default function Settings() {
       }
     });
 
-    // 🗓️ All-Time Frequency Calculation
     const uniqueDaysCount = uniqueDatesSet.size;
     let obesityPercent = 0;
 
     if (earliestDate && latestDate && uniqueDaysCount > 0) {
-      // Calculate total span in days from first expense to last expense
       const diffTime = Math.abs((latestDate as Date).getTime() - (earliestDate as Date).getTime());
-      const totalSpanDays = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 30); // Minimum 30-day baseline
+      const totalSpanDays = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 30);
 
-      // Calculate overall frequency ratio across all past months
       const activeRatio = uniqueDaysCount / totalSpanDays;
       let baseScore = (activeRatio / (25 / 30)) * 90;
 
-      // Count heavy snacking/double-expense days across all time
       const multiMealDays = Object.values(dailyCountMap).filter(count => count >= 2).length;
-      const snackBonus = Math.min(multiMealDays * 1.5, 10); // Cap bonus at 10%
+      const snackBonus = Math.min(multiMealDays * 1.5, 10);
 
       obesityPercent = Math.min(Math.round(baseScore + snackBonus), 100);
     } else if (list.length > 0) {
-      // Fallback if dates aren't available in payload
       obesityPercent = Math.min(list.length * 3, 90);
     }
 
-    // Dynamic status text based on percent
     let obesityStatus = 'Light';
     if (obesityPercent >= 90) {
       obesityStatus = 'Severe Obesity';
@@ -130,14 +129,16 @@ export default function Settings() {
     };
   }, [expenses]);
 
-  const handlePinUpdate = (e: React.FormEvent) => {
+  const handlePinUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identity) return;
+    if (!identity || !currentMember) {
+      setStatusMessage({ type: 'error', text: 'Member profile not loaded.' });
+      return;
+    }
 
-    const pinKey = `babysplitter_pin_${identity}`;
-    const savedPin = localStorage.getItem(pinKey);
+    const actualPin = currentMember.pin || '1234';
 
-    if (savedPin && savedPin !== currentPinInput) {
+    if (currentPinInput !== actualPin) {
       setStatusMessage({ type: 'error', text: 'Current PIN is incorrect.' });
       return;
     }
@@ -147,14 +148,29 @@ export default function Settings() {
       return;
     }
 
-    localStorage.setItem(pinKey, newPinInput);
-    setStatusMessage({ type: 'success', text: 'Security PIN updated successfully!' });
-    setCurrentPinInput('');
-    setNewPinInput('');
-    setTimeout(() => {
-      setShowPinModal(false);
-      setStatusMessage(null);
-    }, 1500);
+    setIsSubmittingPin(true);
+    try {
+      const { error: updateErr } = await supabase
+        .from('members')
+        .update({ pin: newPinInput })
+        .eq('id', currentMember.id);
+
+      if (updateErr) throw updateErr;
+
+      await queryClient.invalidateQueries({ queryKey: ['members'] });
+
+      setStatusMessage({ type: 'success', text: 'Security PIN saved to Supabase!' });
+      setCurrentPinInput('');
+      setNewPinInput('');
+      setTimeout(() => {
+        setShowPinModal(false);
+        setStatusMessage(null);
+      }, 1500);
+    } catch (err: any) {
+      setStatusMessage({ type: 'error', text: err?.message || 'Failed to update PIN.' });
+    } finally {
+      setIsSubmittingPin(false);
+    }
   };
 
   const handleAddMember = (e: React.FormEvent) => {
@@ -187,7 +203,7 @@ export default function Settings() {
 
       {/* 1. Identity Card */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-3 shadow-sm dark:shadow-none">
-        <div 
+        <div
           onClick={() => setShowIdentityDetails(!showIdentityDetails)}
           className="flex items-center justify-between cursor-pointer"
         >
@@ -263,9 +279,10 @@ export default function Settings() {
                   )}
                   <button
                     type="submit"
-                    className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-sky-500/20"
+                    disabled={isSubmittingPin}
+                    className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-sky-500/20"
                   >
-                    <KeyRound className="w-3.5 h-3.5" />
+                    {isSubmittingPin ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                     <span>Save New PIN</span>
                   </button>
                 </form>
@@ -277,7 +294,6 @@ export default function Settings() {
 
       {/* 2. Group Damage Card */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-4 shadow-sm dark:shadow-none">
-        {/* Header Section */}
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 font-bold uppercase">
@@ -291,7 +307,6 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Core Stats: 2-Column Grid */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl p-3 flex flex-col gap-0.5">
             <span className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500">Unsettled Expenses</span>
@@ -304,7 +319,6 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Bottom 2-Column Grid: Unsettled Amount + Obesity Gauge */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl p-3 flex flex-col justify-between">
             <span className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500">Total Unsettled Amount</span>
@@ -318,10 +332,10 @@ export default function Settings() {
               <span className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500">Obesity Bar</span>
               <span className="text-[10px] font-bold text-rose-500 uppercase">{stats.obesityStatus}</span>
             </div>
-            
+
             <div className="w-full bg-zinc-200 dark:bg-zinc-700/60 rounded-full h-2.5 overflow-hidden my-0.5">
-              <div 
-                className="bg-gradient-to-r from-sky-400 via-amber-400 to-rose-500 h-full rounded-full transition-all duration-500" 
+              <div
+                className="bg-gradient-to-r from-sky-400 via-amber-400 to-rose-500 h-full rounded-full transition-all duration-500"
                 style={{ width: `${stats.obesityPercent}%` }}
               />
             </div>
@@ -361,7 +375,7 @@ export default function Settings() {
 
       {/* 4. Members Card */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-3 shadow-sm dark:shadow-none">
-        <div 
+        <div
           onClick={() => setShowMembersList(!showMembersList)}
           className="flex items-center justify-between cursor-pointer"
         >
@@ -422,9 +436,9 @@ export default function Settings() {
 
       {/* 5. App Info Card */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex items-start gap-4 shadow-sm dark:shadow-none">
-        <img 
-          src="/icon-192.png" 
-          alt="BabySplitter App Icon" 
+        <img
+          src="/icon-192.png"
+          alt="BabySplitter App Icon"
           className="w-12 h-12 rounded-2xl object-cover shrink-0 mt-0.5 border border-zinc-200 dark:border-zinc-800 shadow-sm"
         />
         <div className="flex flex-col gap-1">
