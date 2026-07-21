@@ -175,6 +175,7 @@ function SettleConfirmDialog({
           </p>
         </div>
 
+        {/* Scrollable Content */}
         <div className="px-4 overflow-y-auto flex-1 hide-scrollbar">
           {netGroups.map(group => (
             <div key={group.currency} className="mb-3">
@@ -187,31 +188,31 @@ function SettleConfirmDialog({
                 <p className="text-xs text-muted-foreground text-center py-2">
                   Already balanced — no payments needed.
                 </p>
-                ) : (
+              ) : (
                 <div className="grid grid-cols-[max-content_auto_max-content_1fr] gap-y-1.5">
-                 {group.transfers.map((t, i) => (
-                  <div
-                   key={i}
-                   className="col-span-4 grid grid-cols-subgrid items-center gap-x-2.5 bg-white/20 dark:bg-white/5 border border-white/15 dark:border-white/8 rounded-2xl px-3 py-2"
-                   >
-                    <span className="text-xs font-semibold text-left whitespace-nowrap">
-                     {t.debtor}
-                     </span>
-                     <ArrowRight size={12} className="text-muted-foreground shrink-0 justify-self-center mx-1" />
-                    <span className="text-xs font-semibold text-left whitespace-nowrap">
-                    {t.creditor}
-                  </span>
-                 <span className="text-xs font-bold tabular-nums text-red-500 text-right justify-self-end ml-2">
-                 {group.symbol}{t.amount.toLocaleString()}
-                 </span>
+                  {group.transfers.map((t, i) => (
+                    <div
+                      key={i}
+                      className="col-span-4 grid grid-cols-subgrid items-center gap-x-2.5 bg-white/20 dark:bg-white/5 border border-white/15 dark:border-white/8 rounded-2xl px-3 py-2"
+                    >
+                      <span className="text-xs font-semibold text-left whitespace-nowrap">
+                        {t.debtor}
+                      </span>
+                      <ArrowRight size={12} className="text-muted-foreground shrink-0 justify-self-center mx-1" />
+                      <span className="text-xs font-semibold text-left whitespace-nowrap">
+                        {t.creditor}
+                      </span>
+                      <span className="text-xs font-bold tabular-nums text-red-500 text-right justify-self-end ml-2">
+                        {group.symbol}{t.amount.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-               ))}
-              </div>
               )}
             </div>
           ))}
 
-                    {/* How is this calculated? */}
+          {/* How is this calculated? */}
           <div className="mt-2 mb-1 rounded-2xl border border-white/15 dark:border-white/8 bg-white/10 dark:bg-white/3 overflow-hidden">
             <button
               type="button"
@@ -242,24 +243,27 @@ function SettleConfirmDialog({
               )}
             </AnimatePresence>
           </div>
+        </div> {/* 👈 FIXED: Closed the scrollable container here! */}
 
-          <div className="px-4 py-4 flex gap-2.5 shrink-0">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl glass-button font-semibold text-sm">
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => onConfirm(rawTransactions)}
-              disabled={isPending || rawTransactions.length === 0}
-              className="flex-1 py-2.5 rounded-xl glass-button-primary font-semibold text-sm disabled:opacity-50"
-            >
-              {isPending ? 'Settling…' : 'Confirm'}
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
+        {/* Fixed Footer Buttons */}
+        <div className="px-4 py-4 flex gap-2.5 shrink-0 border-t border-white/10">
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl glass-button font-semibold text-sm">
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => onConfirm(rawTransactions)}
+            disabled={isPending || rawTransactions.length === 0}
+            className="flex-1 py-2.5 rounded-xl glass-button-primary font-semibold text-sm disabled:opacity-50"
+          >
+            {isPending ? 'Settling…' : 'Confirm'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 
 // ─── SettlementCard ───────────────────────────────────────────────────────────
 
