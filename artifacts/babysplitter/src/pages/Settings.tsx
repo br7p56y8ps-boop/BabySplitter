@@ -40,85 +40,62 @@ export default function Settings() {
     }
   };
 
-  // Current month statistics computation
+  // Group Spending & Obesity Breakdown Computation
   const stats = useMemo(() => {
     const list = expenses || [];
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
 
-    const monthExpenses = list.filter(e => {
-      const d = new Date(e.expense_date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
+    let totalExpended = 0;
+    let totalUnsettledAmount = 0;
+    let unsettledCount = 0;
+    let settledCount = 0;
+    let foodSpending = 0;
 
-    const totalSpending = monthExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    list.forEach(e => {
+      const amt = Number(e.amount || 0);
+      totalExpended += amt;
 
-    const spenderTotals: Record<string, number> = {};
-    monthExpenses.forEach(e => {
-      const payer = e.paid_by || 'Unknown';
-      spenderTotals[payer] = (spenderTotals[payer] || 0) + Number(e.amount || 0);
-    });
+      const isSettled = e.is_settled || e.status === 'settled';
 
-    let topSpenderName = 'None';
-    let topSpenderAmount = 0;
-    Object.entries(spenderTotals).forEach(([name, amt]) => {
-      if (amt > topSpenderAmount) {
-        topSpenderAmount = amt;
-        topSpenderName = name;
+      if (isSettled) {
+        settledCount++;
+      } else {
+        unsettledCount++;
+        totalUnsettledAmount += amt;
+      }
+
+      // Check for food related keywords to drive Obesity Bar
+      const titleLower = (e.title || '').toLowerCase();
+      const categoryLower = (e.category || '').toLowerCase();
+      const isFood = ['food', 'eat', 'meal', 'dinner', 'lunch', 'breakfast', 'snack', 'restaurant', 'cafe', 'burger', 'pizza'].some(
+        keyword => titleLower.includes(keyword) || categoryLower.includes(keyword)
+      );
+
+      if (isFood) {
+        foodSpending += amt;
       }
     });
 
-    return {
-      totalSpending,
-      expenseCount: monthExpenses.length,
-      topSpenderName,
-      topSpenderAmount
-    };
-  }, [expenses]);
+    // Calculate Obesity percentage based on food spending ratio
+    const foodRatio = totalExpended > 0 ? (foodSpending / totalExpended) * 100 : 0;
+    const obesityPercent = Math.min(Math.round(foodRatio), 100);
 
-  // Dynamic graph logic based directly on actual recent active expenses
-  const last7Days = useMemo(() => {
-    const list = expenses || [];
-    if (!list.length) {
-      return { label: 'RECENT EXPENSES', maxAmount: 0, points: [], pathD: '' };
+    let obesityStatus = 'Light';
+    if (obesityPercent > 75) {
+      obesityStatus = 'Severe Obesity';
+    } else if (obesityPercent > 50) {
+      obesityStatus = 'Chonky';
+    } else if (obesityPercent > 25) {
+      obesityStatus = 'Gaining';
     }
 
-    // Take the last 7 active expenses (sorted chronologically)
-    const recentList = [...list]
-      .sort((a, b) => new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime())
-      .slice(-7);
-
-    // Map raw expense entries to graph data points
-    const rawData = recentList.map(e => {
-      const d = new Date(e.expense_date);
-      const dayName = isNaN(d.getTime()) ? 'Day' : d.toLocaleDateString('en-US', { weekday: 'short' });
-      return {
-        label: e.title || dayName,
-        dayName,
-        amount: Number(e.amount || 0)
-      };
-    });
-
-    const maxAmount = Math.max(...rawData.map(d => d.amount), 1);
-    const minAmount = Math.min(...rawData.map(d => d.amount));
-    const range = maxAmount === minAmount ? 1 : maxAmount - minAmount;
-
-    // Map to SVG coordinates (X: 5 to 95, Y: 10 to 38)
-    const points = rawData.map((d, index) => {
-      const x = rawData.length === 1 ? 50 : 5 + (index / (rawData.length - 1)) * 90;
-      // Normalizes height so even minor variations create nice curves
-      const normalized = (d.amount - minAmount) / range;
-      const y = 38 - normalized * 26; 
-      return { ...d, x, y };
-    });
-
-    // Generate SVG path string
-    const pathD = points.reduce((acc, pt, i) => {
-      return i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
-    }, '');
-
-    return { label: 'RECENT EXPENSES', maxAmount, points, pathD };
+    return {
+      totalExpended,
+      totalUnsettledAmount,
+      unsettledCount,
+      settledCount,
+      obesityPercent,
+      obesityStatus
+    };
   }, [expenses]);
 
   const handlePinUpdate = (e: React.FormEvent) => {
@@ -266,101 +243,62 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
-      {/* 2. Group Spending Card (Direct Active Expenses Graph) */}
+      {/* 2. Group Damage Card (Replaces all graphs) */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-4 shadow-sm dark:shadow-none">
+        {/* Header Section */}
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 font-bold uppercase">
-              {last7Days.label}
+              OVERALL ACTIVITY
             </p>
-            <h2 className="text-base font-medium opacity-90">Group Spending</h2>
+            <h2 className="text-base font-bold opacity-90">Group Damage</h2>
           </div>
           <div className="text-right">
-            <span className="text-2xl font-bold font-mono">৳{stats.totalSpending.toLocaleString()}</span>
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{stats.expenseCount} expense{stats.expenseCount === 1 ? '' : 's'}</p>
+            <span className="text-2xl font-bold font-mono">৳{stats.totalExpended.toLocaleString()}</span>
+            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Total Expended</p>
           </div>
         </div>
 
-        {/* Dynamic Line Graph */}
-        <div className="relative w-full pt-4 pb-1">
-          {last7Days.points.length === 0 ? (
-            <div className="h-32 flex items-center justify-center text-xs text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-800/30 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
-              No active expense records found
+        {/* Core Stats: 2-Column Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl p-3 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500">Unsettled Expenses</span>
+            <span className="text-lg font-bold font-mono text-amber-600 dark:text-amber-400">{stats.unsettledCount}</span>
+          </div>
+
+          <div className="bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl p-3 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500">Settled Expenses</span>
+            <span className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">{stats.settledCount}</span>
+          </div>
+        </div>
+
+        {/* Bottom 2-Column Grid: Unsettled Amount + Obesity Gauge */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl p-3 flex flex-col justify-between">
+            <span className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500">Total Unsettled Amount</span>
+            <span className="text-xl font-bold font-mono text-sky-600 dark:text-sky-400 mt-2">
+              ৳{stats.totalUnsettledAmount.toLocaleString()}
+            </span>
+          </div>
+
+          <div className="bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl p-3 flex flex-col gap-1.5 justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500">Obesity Bar</span>
+              <span className="text-[10px] font-bold text-rose-500 uppercase">{stats.obesityStatus}</span>
             </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <div className="relative h-28 w-full">
-                <svg className="w-full h-full overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="skyGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.35" />
-                      <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Gradient Area under line */}
-                  <motion.path
-                    d={`${last7Days.pathD} L ${last7Days.points[last7Days.points.length - 1]?.x || 95} 45 L ${last7Days.points[0]?.x || 5} 45 Z`}
-                    fill="url(#skyGradient)"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.8 }}
-                  />
-
-                  {/* Smooth Animated Path Line */}
-                  <motion.path
-                    d={last7Days.pathD}
-                    fill="none"
-                    stroke="#38bdf8"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 1, ease: "easeInOut" }}
-                  />
-
-                  {/* Nodes & Pulse Rings */}
-                  {last7Days.points.map((pt, i) => (
-                    <g key={i}>
-                      <motion.circle
-                        cx={pt.x}
-                        cy={pt.y}
-                        r="3"
-                        className="fill-sky-400 stroke-zinc-900"
-                        strokeWidth="1.5"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 0.3, delay: 0.5 + i * 0.05 }}
-                      />
-                      <motion.circle
-                        cx={pt.x}
-                        cy={pt.y}
-                        r="5"
-                        className="fill-sky-400/30"
-                        animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
-                        transition={{ repeat: Infinity, duration: 2, delay: i * 0.2 }}
-                      />
-                    </g>
-                  ))}
-                </svg>
-              </div>
-
-              {/* Labels with actual amounts */}
-              <div className="flex justify-between text-center pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                {last7Days.points.map((pt, i) => (
-                  <div key={i} className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
-                    <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-medium truncate w-full">
-                      {pt.dayName}
-                    </span>
-                    <span className="text-[9px] font-mono text-sky-600 dark:text-sky-400 font-bold truncate w-full">
-                      ৳{pt.amount}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            
+            <div className="w-full bg-zinc-200 dark:bg-zinc-700/60 rounded-full h-2.5 overflow-hidden my-0.5">
+              <div 
+                className="bg-gradient-to-r from-sky-400 via-amber-400 to-rose-500 h-full rounded-full transition-all duration-500" 
+                style={{ width: `${stats.obesityPercent}%` }}
+              />
             </div>
-          )}
+
+            <div className="flex justify-between items-center text-[9px] font-mono text-zinc-400 dark:text-zinc-500">
+              <span>Food Ratio</span>
+              <span className="font-bold text-zinc-700 dark:text-zinc-300">{stats.obesityPercent}%</span>
+            </div>
+          </div>
         </div>
       </div>
 
