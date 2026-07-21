@@ -5,6 +5,7 @@ import { useMutations } from '@/hooks/useMutations';
 import { useLocation } from 'wouter';
 import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Users, Info, UserPlus, RefreshCw, Moon, Sun, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Navigation from '@/components/Navigation';
 
 export default function Settings() {
   const { identity } = useAuth();
@@ -138,7 +139,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-black text-white pb-32 p-5 max-w-md mx-auto flex flex-col gap-4">
+    <div className="min-h-[100dvh] bg-black text-white pb-36 p-5 max-w-md mx-auto flex flex-col gap-4 relative">
       <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
 
       {/* 1. Identity / Selected Profile Management Card */}
@@ -382,6 +383,9 @@ export default function Settings() {
           </p>
         </div>
       </div>
+
+      {/* Fixed Navigation Bar */}
+      <Navigation />
     </div>
   );
 }
