@@ -378,21 +378,24 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
-      {/* 5. App Info Card with App Logo Badge */}
-      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm dark:shadow-none">
-        <div className="w-11 h-11 rounded-2xl bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-          <Receipt className="w-6 h-6 text-sky-600 dark:text-sky-400" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <h2 className="font-bold text-sm tracking-tight">BabySplitter v3.7</h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            A premium, personal shared expense tracker built for close friends. Real-time sync powered by Supabase.
-          </p>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-            Developed by <span className="text-sky-600 dark:text-sky-400 font-semibold">benzavraar</span>
-          </p>
-        </div>
-      </div>
+      {/* 5. App Info Card with actual PWA App Icon */}
+        <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex items-start gap-4 shadow-sm dark:shadow-none">
+        <img 
+          src="/icon-192.png" 
+          alt="BabySplitter App Icon" 
+          className="w-12 h-12 rounded-2xl object-cover shrink-0 mt-0.5 border border-zinc-200 dark:border-zinc-800 shadow-sm"
+        />
+       <div className="flex flex-col gap-1">
+      <h2 className="font-bold text-sm tracking-tight">BabySplitter v3.7</h2>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+          A premium, personal shared expense tracker built for close friends. Real-time sync powered by Supabase.
+      </p>
+      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+      Developed by <span className="text-sky-600 dark:text-sky-400 font-semibold">benzavraar</span>
+      </p>
+     </div>
+     </div>
+
 
       {/* Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-black/90 backdrop-blur-xl border-t border-zinc-200 dark:border-zinc-800 px-6 py-2.5 z-50 flex items-center justify-around">
