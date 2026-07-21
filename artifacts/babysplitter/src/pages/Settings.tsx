@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useExpenses, useMembers } from '@/hooks/useQueries';
 import { useMutations } from '@/hooks/useMutations';
 import { useLocation } from 'wouter';
-import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Calendar, Users, Info, UserPlus, RefreshCw } from 'lucide-react';
+import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Calendar, Users, Info, UserPlus, RefreshCw, Moon, Sun, Code2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Settings() {
@@ -22,23 +22,38 @@ export default function Settings() {
   const [newMemberName, setNewMemberName] = useState('');
   const [memberMessage, setMemberMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Compute graph data with 7-day filter and smart fallback to full period
+  // Theme state
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.documentElement.classList.contains('dark') || true;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  // Compute graph data: robust fallback so line graph always plots properly across available points
   const chartData = useMemo(() => {
     const list = expenses || [];
     if (list.length === 0) return { data: [], label: 'No Expenses Yet', isFullPeriod: false };
 
+    // Sort chronologically by date
+    const sorted = [...list].sort((a, b) => new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime());
+
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    let recent = list.filter(e => new Date(e.expense_date) >= sevenDaysAgo);
-    let isFullPeriod = false;
+    let recent = sorted.filter(e => new Date(e.expense_date) >= sevenDaysAgo);
+    let label = 'Last 7 Days';
 
-    if (recent.length === 0) {
-      recent = list;
-      isFullPeriod = true;
+    // If last 7 days are empty or only have 1 data point, fallback to full period so the graph shows trend lines clearly
+    if (recent.length < 2) {
+      recent = sorted;
+      label = 'Full Period Overview';
     }
-
-    recent.sort((a, b) => new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime());
 
     const points = recent.map(e => ({
       date: new Date(e.expense_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -47,8 +62,7 @@ export default function Settings() {
 
     return {
       data: points,
-      label: isFullPeriod ? 'Full Period Overview' : 'Last 7 Days',
-      isFullPeriod
+      label
     };
   }, [expenses]);
 
@@ -97,12 +111,9 @@ export default function Settings() {
 
   return (
     <div className="min-h-[100dvh] bg-black text-white pb-32 p-6 max-w-md mx-auto flex flex-col gap-6">
+      {/* Header without app version badge */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        {(() => {
-          const metaVersion = document.querySelector("meta[name='app-version']")?.getAttribute("content");
-          return <span className="text-xs bg-white/10 px-3 py-1 rounded-full text-white/70 font-medium">BabySplitter {metaVersion || 'v3.7'}</span>;
-        })()}
       </div>
 
       {/* Identity Card with collapsible Change PIN */}
@@ -195,6 +206,26 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
+      {/* Theme Mode Switch Card */}
+      <div className="bg-white/5 border border-white/10 rounded-3xl p-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
+            {isDarkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-amber-400" />}
+          </div>
+          <div>
+            <h2 className="font-bold text-base">Appearance Mode</h2>
+            <p className="text-xs text-white/50">{isDarkMode ? 'Dark Mode Active' : 'Light Mode Active'}</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          className="bg-white/10 hover:bg-white/20 border border-white/15 px-4 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5"
+        >
+          {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-primary" />}
+          <span>{isDarkMode ? 'Light' : 'Dark'}</span>
+        </button>
+      </div>
+
       {/* Animated Expense Statistics Line Graph Card */}
       <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -211,7 +242,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="w-full h-36 bg-black/40 border border-white/10 rounded-2xl p-3 flex flex-col justify-end relative overflow-hidden">
+        <div className="w-full h-40 bg-black/40 border border-white/10 rounded-2xl p-3 flex flex-col justify-end relative overflow-hidden">
           {chartData.data.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center text-xs text-white/40 font-medium">
               No expense records found
@@ -224,20 +255,24 @@ export default function Settings() {
                 <div className="border-b border-white/20 w-full" />
               </div>
 
-              <div className="w-full h-24 relative flex items-end">
+              <div className="w-full h-28 relative flex items-end">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--primary, #6366f1)" stopOpacity="0.4" />
+                      <stop offset="0%" stopColor="var(--primary, #6366f1)" stopOpacity="0.5" />
                       <stop offset="100%" stopColor="var(--primary, #6366f1)" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
 
                   {(() => {
-                    const max = Math.max(...chartData.data.map(d => d.amount), 1);
+                    const amounts = chartData.data.map(d => d.amount);
+                    const min = Math.min(...amounts, 0);
+                    const max = Math.max(...amounts, 1);
+                    const range = max - min || 1;
+
                     const pts = chartData.data.map((d, i) => {
                       const x = chartData.data.length === 1 ? 50 : (i / (chartData.data.length - 1)) * 100;
-                      const y = 45 - (d.amount / max) * 40;
+                      const y = 45 - ((d.amount - min) / range) * 40;
                       return { x, y };
                     });
 
@@ -260,7 +295,7 @@ export default function Settings() {
                           d={pathString}
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth="2"
+                          strokeWidth="2.5"
                           className="text-primary"
                         />
                         {pts.map((p, idx) => (
@@ -268,10 +303,10 @@ export default function Settings() {
                             key={idx}
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            transition={{ delay: idx * 0.1, duration: 0.3 }}
+                            transition={{ delay: idx * 0.05, duration: 0.3 }}
                             cx={p.x}
                             cy={p.y}
-                            r="2"
+                            r="2.5"
                             className="fill-primary stroke-white stroke-1"
                           />
                         ))}
@@ -310,7 +345,6 @@ export default function Settings() {
           ))}
         </div>
 
-        {/* Add Permanent Member Form */}
         <form onSubmit={handleAddMember} className="flex flex-col gap-2.5 pt-3 border-t border-white/10 mt-1">
           <label className="text-xs text-white/60 font-medium">Add Permanent Member</label>
           <div className="flex gap-2">
@@ -342,15 +376,15 @@ export default function Settings() {
         </form>
       </div>
 
-      {/* App Info Card */}
+      {/* Developer & App Info Card */}
       <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
-            <Info className="w-5 h-5 text-primary" />
+            <Code2 className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h2 className="font-bold text-base">BabySplitter Engine</h2>
-            <p className="text-xs text-white/50">Secure split & expense tracker</p>
+            <p className="text-xs text-white/50">Developed by <span className="text-primary font-semibold">benzavraar</span></p>
           </div>
         </div>
         <span className="text-xs bg-white/10 px-3 py-1 rounded-full text-white/70 font-medium">v3.7</span>
