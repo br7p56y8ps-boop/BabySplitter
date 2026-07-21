@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useExpenses, useMembers } from '@/hooks/useQueries';
 import { useMutations } from '@/hooks/useMutations';
 import { useLocation, Link } from 'wouter';
-import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Users, UserPlus, RefreshCw, Moon, Sun, ChevronDown, ChevronUp, Home, ArrowLeftRight, MessageSquare, BookOpen, SlidersHorizontal, Receipt } from 'lucide-react';
+import { Shield, KeyRound, CheckCircle2, AlertCircle, Users, UserPlus, RefreshCw, Moon, Sun, ChevronDown, ChevronUp, Home, ArrowLeftRight, MessageSquare, BookOpen, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Settings() {
@@ -77,67 +77,49 @@ export default function Settings() {
     };
   }, [expenses]);
 
-   // Dynamic 7-day spending computation with active period fallback
+  // Dynamic graph logic based directly on actual recent active expenses
   const last7Days = useMemo(() => {
     const list = expenses || [];
     if (!list.length) {
-      return { label: 'LAST 7 DAYS', maxAmount: 0, points: [], pathD: '' };
+      return { label: 'RECENT EXPENSES', maxAmount: 0, points: [], pathD: '' };
     }
 
-    // Determine target anchor date (defaults to today)
-    let anchorDate = new Date();
-    
-    // Check if current week has expenses
-    const hasCurrentWeekExpenses = list.some(e => {
+    // Take the last 7 active expenses (sorted chronologically)
+    const recentList = [...list]
+      .sort((a, b) => new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime())
+      .slice(-7);
+
+    // Map raw expense entries to graph data points
+    const rawData = recentList.map(e => {
       const d = new Date(e.expense_date);
-      const diffDays = (anchorDate.getTime() - d.getTime()) / (1000 * 3600 * 24);
-      return diffDays >= 0 && diffDays <= 7;
+      const dayName = isNaN(d.getTime()) ? 'Day' : d.toLocaleDateString('en-US', { weekday: 'short' });
+      return {
+        label: e.title || dayName,
+        dayName,
+        amount: Number(e.amount || 0)
+      };
     });
 
-    // If current week has no expenses, anchor to the most recent expense date in history
-    let label = 'LAST 7 DAYS';
-    if (!hasCurrentWeekExpenses) {
-      const sorted = [...list].sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
-      if (sorted[0]?.expense_date) {
-        anchorDate = new Date(sorted[0].expense_date);
-        const dateString = anchorDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        label = `RECENT ACTIVITY (${dateString})`;
-      }
-    }
+    const maxAmount = Math.max(...rawData.map(d => d.amount), 1);
+    const minAmount = Math.min(...rawData.map(d => d.amount));
+    const range = maxAmount === minAmount ? 1 : maxAmount - minAmount;
 
-    // Build 7-day points relative to anchorDate
-    const rawDays = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(anchorDate);
-      d.setDate(d.getDate() - i);
-      const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-      const dateStr = d.toISOString().split('T')[0];
-
-      const amount = list
-        .filter(e => e.expense_date?.startsWith(dateStr))
-        .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-      rawDays.push({ dayName, amount });
-    }
-
-    const maxAmount = Math.max(...rawDays.map(d => d.amount), 1);
-
-    // Calculate SVG coordinate points (X: 5 to 95, Y: 40 to 10)
-    const points = rawDays.map((d, index) => {
-      const x = 5 + (index / 6) * 90;
-      // Invert Y axis: 0 amount sits at Y=40, max amount sits at Y=10
-      const y = 40 - (d.amount / maxAmount) * 30;
+    // Map to SVG coordinates (X: 5 to 95, Y: 10 to 38)
+    const points = rawData.map((d, index) => {
+      const x = rawData.length === 1 ? 50 : 5 + (index / (rawData.length - 1)) * 90;
+      // Normalizes height so even minor variations create nice curves
+      const normalized = (d.amount - minAmount) / range;
+      const y = 38 - normalized * 26; 
       return { ...d, x, y };
     });
 
-    // SVG Path Command (d) string
+    // Generate SVG path string
     const pathD = points.reduce((acc, pt, i) => {
       return i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
     }, '');
 
-    return { label, maxAmount, points, pathD };
+    return { label: 'RECENT EXPENSES', maxAmount, points, pathD };
   }, [expenses]);
-
 
   const handlePinUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,7 +266,7 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
-            {/* 2. Group Spending Card (Animated Line Graph) */}
+      {/* 2. Group Spending Card (Direct Active Expenses Graph) */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-4 shadow-sm dark:shadow-none">
         <div className="flex items-start justify-between">
           <div>
@@ -299,11 +281,11 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Live Animated Line Graph */}
+        {/* Dynamic Line Graph */}
         <div className="relative w-full pt-4 pb-1">
-          {last7Days.maxAmount === 0 ? (
+          {last7Days.points.length === 0 ? (
             <div className="h-32 flex items-center justify-center text-xs text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-800/30 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
-              No expense activity recorded yet
+              No active expense records found
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -311,21 +293,21 @@ export default function Settings() {
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="skyGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.3" />
+                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.35" />
                       <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
 
-                  {/* Gradient Fill under path */}
+                  {/* Gradient Area under line */}
                   <motion.path
-                    d={`${last7Days.pathD} L 95 45 L 5 45 Z`}
+                    d={`${last7Days.pathD} L ${last7Days.points[last7Days.points.length - 1]?.x || 95} 45 L ${last7Days.points[0]?.x || 5} 45 Z`}
                     fill="url(#skyGradient)"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
+                    transition={{ duration: 0.8 }}
                   />
 
-                  {/* Main Line Path */}
+                  {/* Smooth Animated Path Line */}
                   <motion.path
                     d={last7Days.pathD}
                     fill="none"
@@ -335,44 +317,44 @@ export default function Settings() {
                     strokeLinejoin="round"
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
-                    transition={{ duration: 1.2, ease: "easeInOut" }}
+                    transition={{ duration: 1, ease: "easeInOut" }}
                   />
 
-                  {/* Data Point Nodes */}
+                  {/* Nodes & Pulse Rings */}
                   {last7Days.points.map((pt, i) => (
                     <g key={i}>
                       <motion.circle
                         cx={pt.x}
                         cy={pt.y}
-                        r="2.5"
+                        r="3"
                         className="fill-sky-400 stroke-zinc-900"
-                        strokeWidth="1"
+                        strokeWidth="1.5"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ duration: 0.3, delay: 0.8 + i * 0.05 }}
+                        transition={{ duration: 0.3, delay: 0.5 + i * 0.05 }}
                       />
-                      {pt.amount > 0 && (
-                        <motion.circle
-                          cx={pt.x}
-                          cy={pt.y}
-                          r="4"
-                          className="fill-sky-400/30"
-                          animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
-                          transition={{ repeat: Infinity, duration: 2, delay: i * 0.2 }}
-                        />
-                      )}
+                      <motion.circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r="5"
+                        className="fill-sky-400/30"
+                        animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+                        transition={{ repeat: Infinity, duration: 2, delay: i * 0.2 }}
+                      />
                     </g>
                   ))}
                 </svg>
               </div>
 
-              {/* Day Labels */}
-              <div className="grid grid-cols-7 text-center pt-2 border-t border-zinc-100 dark:border-zinc-800">
+              {/* Labels with actual amounts */}
+              <div className="flex justify-between text-center pt-2 border-t border-zinc-100 dark:border-zinc-800">
                 {last7Days.points.map((pt, i) => (
-                  <div key={i} className="flex flex-col items-center gap-0.5">
-                    <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-medium">{pt.dayName}</span>
-                    <span className="text-[8px] font-mono text-sky-600 dark:text-sky-400 font-semibold">
-                      {pt.amount > 0 ? `৳${pt.amount}` : '-'}
+                  <div key={i} className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+                    <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-medium truncate w-full">
+                      {pt.dayName}
+                    </span>
+                    <span className="text-[9px] font-mono text-sky-600 dark:text-sky-400 font-bold truncate w-full">
+                      ৳{pt.amount}
                     </span>
                   </div>
                 ))}
@@ -381,7 +363,6 @@ export default function Settings() {
           )}
         </div>
       </div>
-
 
       {/* 3. Appearance Card */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-4 flex items-center justify-between shadow-sm dark:shadow-none">
@@ -469,24 +450,23 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
-      {/* 5. App Info Card with actual PWA App Icon */}
-        <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex items-start gap-4 shadow-sm dark:shadow-none">
+      {/* 5. App Info Card with PWA App Icon */}
+      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex items-start gap-4 shadow-sm dark:shadow-none">
         <img 
           src="/icon-192.png" 
           alt="BabySplitter App Icon" 
           className="w-12 h-12 rounded-2xl object-cover shrink-0 mt-0.5 border border-zinc-200 dark:border-zinc-800 shadow-sm"
         />
-       <div className="flex flex-col gap-1">
-      <h2 className="font-bold text-sm tracking-tight">BabySplitter v3.7</h2>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-          A premium, personal shared expense tracker built for close friends. Real-time sync powered by Supabase.
-      </p>
-      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-      Developed by <span className="text-sky-600 dark:text-sky-400 font-semibold">benzavraar</span>
-      </p>
-     </div>
-     </div>
-
+        <div className="flex flex-col gap-1">
+          <h2 className="font-bold text-sm tracking-tight">BabySplitter v3.7</h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            A premium, personal shared expense tracker built for close friends. Real-time sync powered by Supabase.
+          </p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+            Developed by <span className="text-sky-600 dark:text-sky-400 font-semibold">benzavraar</span>
+          </p>
+        </div>
+      </div>
 
       {/* Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-black/90 backdrop-blur-xl border-t border-zinc-200 dark:border-zinc-800 px-6 py-2.5 z-50 flex items-center justify-around">
