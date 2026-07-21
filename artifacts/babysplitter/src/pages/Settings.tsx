@@ -77,25 +77,67 @@ export default function Settings() {
     };
   }, [expenses]);
 
-  // Last 7 days spending breakdown
+   // Dynamic 7-day spending computation with active period fallback
   const last7Days = useMemo(() => {
     const list = expenses || [];
-    const days = [];
+    if (!list.length) {
+      return { label: 'LAST 7 DAYS', maxAmount: 0, points: [], pathD: '' };
+    }
+
+    // Determine target anchor date (defaults to today)
+    let anchorDate = new Date();
+    
+    // Check if current week has expenses
+    const hasCurrentWeekExpenses = list.some(e => {
+      const d = new Date(e.expense_date);
+      const diffDays = (anchorDate.getTime() - d.getTime()) / (1000 * 3600 * 24);
+      return diffDays >= 0 && diffDays <= 7;
+    });
+
+    // If current week has no expenses, anchor to the most recent expense date in history
+    let label = 'LAST 7 DAYS';
+    if (!hasCurrentWeekExpenses) {
+      const sorted = [...list].sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
+      if (sorted[0]?.expense_date) {
+        anchorDate = new Date(sorted[0].expense_date);
+        const dateString = anchorDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        label = `RECENT ACTIVITY (${dateString})`;
+      }
+    }
+
+    // Build 7-day points relative to anchorDate
+    const rawDays = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date();
+      const d = new Date(anchorDate);
       d.setDate(d.getDate() - i);
       const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
       const dateStr = d.toISOString().split('T')[0];
 
-      const dayTotal = list
+      const amount = list
         .filter(e => e.expense_date?.startsWith(dateStr))
         .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-      days.push({ dayName, dayTotal });
+      rawDays.push({ dayName, amount });
     }
-    const maxDay = Math.max(...days.map(d => d.dayTotal), 1);
-    return days.map(d => ({ ...d, heightPercent: Math.max(Math.round((d.dayTotal / maxDay) * 100), 10) }));
+
+    const maxAmount = Math.max(...rawDays.map(d => d.amount), 1);
+
+    // Calculate SVG coordinate points (X: 5 to 95, Y: 40 to 10)
+    const points = rawDays.map((d, index) => {
+      const x = 5 + (index / 6) * 90;
+      // Invert Y axis: 0 amount sits at Y=40, max amount sits at Y=10
+      const y = 40 - (d.amount / maxAmount) * 30;
+      return { ...d, x, y };
+    });
+
+    // SVG Path Command (d) string
+    const pathD = points.reduce((acc, pt, i) => {
+      return i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+    }, '');
+
+    return { label, maxAmount, points, pathD };
   }, [expenses]);
+
 
   const handlePinUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,11 +284,13 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
-      {/* 2. Group Spending Card */}
+            {/* 2. Group Spending Card (Animated Line Graph) */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-4 shadow-sm dark:shadow-none">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 font-bold uppercase">This Month</p>
+            <p className="text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 font-bold uppercase">
+              {last7Days.label}
+            </p>
             <h2 className="text-base font-medium opacity-90">Group Spending</h2>
           </div>
           <div className="text-right">
@@ -255,42 +299,89 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-zinc-100/70 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-700/50 rounded-2xl p-3 flex flex-col justify-between">
-            <p className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-400 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3 text-sky-500" /> Top Spender
-            </p>
-            <div className="mt-2">
-              <p className="font-bold text-sm truncate">{stats.topSpenderName}</p>
-              <p className="text-xs text-sky-600 dark:text-sky-400 font-mono font-semibold">৳{stats.topSpenderAmount.toLocaleString()}</p>
+        {/* Live Animated Line Graph */}
+        <div className="relative w-full pt-4 pb-1">
+          {last7Days.maxAmount === 0 ? (
+            <div className="h-32 flex items-center justify-center text-xs text-zinc-400 dark:text-zinc-500 bg-zinc-50 dark:bg-zinc-800/30 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
+              No expense activity recorded yet
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="relative h-28 w-full">
+                <svg className="w-full h-full overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="skyGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
 
-          <div className="bg-zinc-100/70 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-700/50 rounded-2xl p-3 flex flex-col justify-between">
-            <p className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-400">Expenses</p>
-            <div className="mt-2">
-              <p className="text-xl font-bold font-mono">{stats.expenseCount}</p>
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-500">this month</p>
-            </div>
-          </div>
-        </div>
+                  {/* Gradient Fill under path */}
+                  <motion.path
+                    d={`${last7Days.pathD} L 95 45 L 5 45 Z`}
+                    fill="url(#skyGradient)"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                  />
 
-        <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex flex-col gap-2">
-          <p className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 tracking-wider">Last 7 Days</p>
-          <div className="grid grid-cols-7 gap-1.5 items-end h-16 pt-2">
-            {last7Days.map((d, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 h-full justify-end">
-                <div 
-                  className="w-full bg-sky-500/30 dark:bg-sky-500/40 hover:bg-sky-500 transition-all rounded-t-md"
-                  style={{ height: `${d.heightPercent}%` }}
-                  title={`${d.dayName}: ৳${d.dayTotal}`}
-                />
-                <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-medium">{d.dayName}</span>
+                  {/* Main Line Path */}
+                  <motion.path
+                    d={last7Days.pathD}
+                    fill="none"
+                    stroke="#38bdf8"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 1.2, ease: "easeInOut" }}
+                  />
+
+                  {/* Data Point Nodes */}
+                  {last7Days.points.map((pt, i) => (
+                    <g key={i}>
+                      <motion.circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r="2.5"
+                        className="fill-sky-400 stroke-zinc-900"
+                        strokeWidth="1"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.3, delay: 0.8 + i * 0.05 }}
+                      />
+                      {pt.amount > 0 && (
+                        <motion.circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r="4"
+                          className="fill-sky-400/30"
+                          animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+                          transition={{ repeat: Infinity, duration: 2, delay: i * 0.2 }}
+                        />
+                      )}
+                    </g>
+                  ))}
+                </svg>
               </div>
-            ))}
-          </div>
+
+              {/* Day Labels */}
+              <div className="grid grid-cols-7 text-center pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                {last7Days.points.map((pt, i) => (
+                  <div key={i} className="flex flex-col items-center gap-0.5">
+                    <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-medium">{pt.dayName}</span>
+                    <span className="text-[8px] font-mono text-sky-600 dark:text-sky-400 font-semibold">
+                      {pt.amount > 0 ? `৳${pt.amount}` : '-'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
 
       {/* 3. Appearance Card */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-4 flex items-center justify-between shadow-sm dark:shadow-none">
