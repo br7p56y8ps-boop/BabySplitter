@@ -40,7 +40,7 @@ export default function Settings() {
     }
   };
 
-  // Group Spending & Obesity Breakdown Computation
+  // Group Spending & All-Time Frequency-based Obesity Breakdown Computation
   const stats = useMemo(() => {
     const list = expenses || [];
 
@@ -48,7 +48,12 @@ export default function Settings() {
     let totalUnsettledAmount = 0;
     let unsettledCount = 0;
     let settledCount = 0;
-    let foodSpending = 0;
+
+    // Track active unique dates and expense density across ALL past records
+    const uniqueDatesSet = new Set<string>();
+    const dailyCountMap: Record<string, number> = {};
+    let earliestDate: Date | null = null;
+    let latestDate: Date | null = null;
 
     list.forEach((e: any) => {
       // 🛠️ Robust check for amount across different DB field names & string types
@@ -67,30 +72,51 @@ export default function Settings() {
         totalUnsettledAmount += amt;
       }
 
-      // 🍔 Smart Food Detection: Assume expense IS food unless explicitly non-food
-      const titleLower = (e.title || e.description || '').toLowerCase();
-      const categoryLower = (e.category || '').toLowerCase();
+      // Track all-time logging dates
+      const rawDate = e.created_at || e.date || e.timestamp;
+      if (rawDate) {
+        const d = new Date(rawDate);
+        if (!isNaN(d.getTime())) {
+          const dayKey = d.toISOString().split('T')[0];
+          uniqueDatesSet.add(dayKey);
+          dailyCountMap[dayKey] = (dailyCountMap[dayKey] || 0) + 1;
 
-      const isNonFood = ['rent', 'bill', 'electric', 'wifi', 'internet', 'cab', 'uber', 'pathao', 'bus', 'flight', 'recharge', 'movie'].some(
-        keyword => titleLower.includes(keyword) || categoryLower.includes(keyword)
-      );
-
-      // If not explicitly marked as non-food, count towards food spending
-      if (!isNonFood && amt > 0) {
-        foodSpending += amt;
+          if (!earliestDate || d < earliestDate) earliestDate = d;
+          if (!latestDate || d > latestDate) latestDate = d;
+        }
       }
     });
 
-    // Calculate Obesity percentage based on food spending ratio
-    const foodRatio = totalExpended > 0 ? (foodSpending / totalExpended) * 100 : 0;
-    const obesityPercent = Math.min(Math.round(foodRatio), 100);
+    // 🗓️ All-Time Frequency Calculation
+    const uniqueDaysCount = uniqueDatesSet.size;
+    let obesityPercent = 0;
 
+    if (earliestDate && latestDate && uniqueDaysCount > 0) {
+      // Calculate total span in days from first expense to last expense
+      const diffTime = Math.abs((latestDate as Date).getTime() - (earliestDate as Date).getTime());
+      const totalSpanDays = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 30); // Minimum 30-day baseline
+
+      // Calculate overall frequency ratio across all past months
+      const activeRatio = uniqueDaysCount / totalSpanDays;
+      let baseScore = (activeRatio / (25 / 30)) * 90;
+
+      // Count heavy snacking/double-expense days across all time
+      const multiMealDays = Object.values(dailyCountMap).filter(count => count >= 2).length;
+      const snackBonus = Math.min(multiMealDays * 1.5, 10); // Cap bonus at 10%
+
+      obesityPercent = Math.min(Math.round(baseScore + snackBonus), 100);
+    } else if (list.length > 0) {
+      // Fallback if dates aren't available in payload
+      obesityPercent = Math.min(list.length * 3, 90);
+    }
+
+    // Dynamic status text based on percent
     let obesityStatus = 'Light';
-    if (obesityPercent > 75) {
+    if (obesityPercent >= 90) {
       obesityStatus = 'Severe Obesity';
-    } else if (obesityPercent > 50) {
+    } else if (obesityPercent > 60) {
       obesityStatus = 'Chonky';
-    } else if (obesityPercent > 25) {
+    } else if (obesityPercent > 30) {
       obesityStatus = 'Gaining';
     }
 
@@ -301,7 +327,7 @@ export default function Settings() {
             </div>
 
             <div className="flex justify-between items-center text-[9px] font-mono text-zinc-400 dark:text-zinc-500">
-              <span>Food Ratio</span>
+              <span>Frequency</span>
               <span className="font-bold text-zinc-700 dark:text-zinc-300">{stats.obesityPercent}%</span>
             </div>
           </div>
