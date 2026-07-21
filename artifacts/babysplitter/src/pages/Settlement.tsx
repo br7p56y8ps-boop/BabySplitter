@@ -187,23 +187,26 @@ function SettleConfirmDialog({
                 <p className="text-xs text-muted-foreground text-center py-2">
                   Already balanced — no payments needed.
                 </p>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {group.transfers.map((t, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 bg-white/20 dark:bg-white/5 border border-white/15 dark:border-white/8 rounded-2xl px-3 py-2"
-                    >
-                      <span className="text-xs font-semibold flex-1 min-w-0 truncate">{t.debtor}</span>
-                      <ArrowRight size={12} className="text-muted-foreground shrink-0" />
-                      <span className="text-xs font-semibold flex-1 min-w-0 truncate text-right">{t.creditor}</span>
-                      {/* Amount — red (not yet settled) */}
-                      <span className="text-xs font-bold tabular-nums ml-1 shrink-0 text-red-500">
-                        {group.symbol}{t.amount.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+                ) : (
+                <div className="grid grid-cols-[max-content_auto_max-content_1fr] gap-y-1.5">
+                 {group.transfers.map((t, i) => (
+                  <div
+                   key={i}
+                   className="col-span-4 grid grid-cols-subgrid items-center gap-x-2.5 bg-white/20 dark:bg-white/5 border border-white/15 dark:border-white/8 rounded-2xl px-3 py-2"
+                   >
+                    <span className="text-xs font-semibold text-left whitespace-nowrap">
+                     {t.debtor}
+                     </span>
+                     <ArrowRight size={12} className="text-muted-foreground shrink-0 justify-self-center mx-1" />
+                    <span className="text-xs font-semibold text-left whitespace-nowrap">
+                    {t.creditor}
+                  </span>
+                 <span className="text-xs font-bold tabular-nums text-red-500 text-right justify-self-end ml-2">
+                 {group.symbol}{t.amount.toLocaleString()}
+                 </span>
                 </div>
+               ))}
+              </div>
               )}
             </div>
           ))}
@@ -231,10 +234,10 @@ function SettleConfirmDialog({
                 >
                   <div className="px-3 pb-3 flex flex-col gap-2">
                     <p className="text-[10px] leading-relaxed text-muted-foreground">
-                      Instead of settling each expense separately, we calculate each person's overall
+                      Instead of settling each expense separately, it is calculate with each person's overall
                       balance (total paid minus their fair share) and net it against everyone else's.
                       This gives the fewest possible payments to clear all balances — the same end
-                      result, just fewer transactions.
+                      result but just with fewer transactions.
                     </p>
                     <button
                       onClick={() => setShowBreakdown(v => !v)}
