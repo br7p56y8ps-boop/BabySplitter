@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AppBar } from "@/components/AppBar";
 import { BottomNav } from "@/components/BottomNav";
 import { AddExpenseModal } from "@/components/AddExpenseModal";
+import { PinRecommendationModal } from "@/components/PinRecommendationModal";
 import { useExpenses } from "@/hooks/useQueries";
 import { useMutations } from "@/hooks/useMutations";
 import { format } from "date-fns";
@@ -54,7 +55,6 @@ function ExpenseCard({ expense, onEdit }: { expense: ExpenseWithDetails; onEdit:
             className="overflow-hidden"
           >
             <div className="border-t border-white/20 dark:border-white/10 bg-white/25 dark:bg-black/20 px-5 py-4 flex flex-col gap-4">
-              {/* Paid By */}
               <div>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Paid By</p>
                 <div className="flex flex-col gap-1">
@@ -67,7 +67,6 @@ function ExpenseCard({ expense, onEdit }: { expense: ExpenseWithDetails; onEdit:
                 </div>
               </div>
 
-              {/* Split Among */}
               <div>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Split Among</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -79,7 +78,6 @@ function ExpenseCard({ expense, onEdit }: { expense: ExpenseWithDetails; onEdit:
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={e => { e.stopPropagation(); onEdit(expense); }}
@@ -116,8 +114,6 @@ export function HomePage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<ExpenseWithDetails | null>(null);
 
-  // Only show unsettled / partial — fully settled expenses live in History
-  // Sort latest date first
   const visibleExpenses = (expenses || [])
     .filter(e => e.status !== 'settled')
     .sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
@@ -125,6 +121,7 @@ export function HomePage() {
   return (
     <div className="min-h-[100dvh] pt-24 pb-24 px-4 flex flex-col max-w-md mx-auto relative">
       <AppBar title="BabySplitter" showBell />
+      <PinRecommendationModal />
 
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">

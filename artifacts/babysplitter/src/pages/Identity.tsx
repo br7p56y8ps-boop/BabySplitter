@@ -51,9 +51,11 @@ export default function Identity() {
 
   return (
     <div className="min-h-[100dvh] bg-black text-white flex flex-col justify-center p-4 max-w-md mx-auto relative overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center filter blur-2xl opacity-20 scale-125 pointer-events-none"
-        style={{ backgroundImage: `url('/icon-192.png')` }}
+      {/* Background blurred icon image */}
+      <img
+        src="/icon-192.png"
+        alt="Background"
+        className="absolute inset-0 w-full h-full object-cover filter blur-2xl opacity-25 scale-125 pointer-events-none"
       />
       <div className="absolute inset-0 bg-black/60 pointer-events-none" />
 
