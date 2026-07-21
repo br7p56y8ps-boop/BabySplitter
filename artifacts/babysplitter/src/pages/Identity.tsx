@@ -1,17 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useMembers } from '@/hooks/useQueries';
 import { useLocation } from 'wouter';
 import { KeyRound, Shield, RefreshCw } from 'lucide-react';
 
 export default function Identity() {
-  const { login } = useAuth();
+  const { identity, login } = useAuth();
   const [, setLocation] = useLocation();
   const { data: members, isLoading } = useMembers();
 
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [pinInput, setPinInput] = useState('');
   const [error, setError] = useState('');
+
+  // Auto-redirect to home if profile is already logged in
+  useEffect(() => {
+    if (identity) {
+      setLocation('/home');
+    }
+  }, [identity, setLocation]);
 
   const handleSelectMember = (member: any) => {
     setSelectedMember(member);
@@ -31,7 +38,7 @@ export default function Identity() {
     }
 
     login(selectedMember.current_name || selectedMember.name);
-    setLocation('/');
+    setLocation('/home');
   };
 
   if (isLoading) {
@@ -44,7 +51,7 @@ export default function Identity() {
 
   return (
     <div className="min-h-[100dvh] bg-black text-white flex flex-col justify-center p-4 max-w-md mx-auto relative overflow-hidden">
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center filter blur-2xl opacity-20 scale-125 pointer-events-none"
         style={{ backgroundImage: `url('/icon-192.png')` }}
       />
