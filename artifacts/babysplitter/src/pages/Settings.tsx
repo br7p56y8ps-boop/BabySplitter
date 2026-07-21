@@ -147,7 +147,7 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-black text-white pb-36 p-5 max-w-md mx-auto flex flex-col gap-4 relative">
+    <div className="min-h-[100dvh] bg-black text-white pb-36 p-4 flex flex-col gap-4 w-full">
       <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
 
       {/* 1. Identity / Selected Profile Management Card */}
@@ -392,8 +392,8 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation Bar matching original screenshot styling */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-2.5 z-50 max-w-md mx-auto flex items-center justify-between">
+      {/* Mobile Bottom Navigation Bar matching global layout */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 px-6 py-2.5 z-50 flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href || (item.href === '/settings' && location === '/settings');
