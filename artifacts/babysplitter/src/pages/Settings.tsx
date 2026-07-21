@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useExpenses, useMembers } from '@/hooks/useQueries';
 import { useMutations } from '@/hooks/useMutations';
 import { useLocation, Link } from 'wouter';
-import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Users, Info, UserPlus, RefreshCw, Moon, Sun, ChevronDown, ChevronUp, Home, ArrowLeftRight, MessageSquare, BookOpen, SlidersHorizontal } from 'lucide-react';
+import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Users, UserPlus, RefreshCw, Moon, Sun, ChevronDown, ChevronUp, Home, ArrowLeftRight, MessageSquare, BookOpen, SlidersHorizontal, Receipt } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Settings() {
@@ -149,27 +149,27 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground pb-36 p-4 flex flex-col gap-4 w-full">
+    <div className="min-h-[100dvh] bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white pb-36 p-4 flex flex-col gap-4 w-full">
       <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
 
       {/* 1. Identity Card */}
-      <div className="bg-card border border-border rounded-3xl p-5 flex flex-col gap-3">
+      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-3 shadow-sm dark:shadow-none">
         <div 
           onClick={() => setShowIdentityDetails(!showIdentityDetails)}
           className="flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/25 border border-primary/40 flex items-center justify-center text-primary font-bold text-lg">
+            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400 font-bold text-lg">
               {identity?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div>
-              <p className="text-[10px] tracking-wider opacity-50 font-bold uppercase">Identity</p>
+              <p className="text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 font-bold uppercase">Identity</p>
               <p className="text-base font-bold">{identity || 'Select Profile'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-            {showIdentityDetails ? <ChevronUp className="w-4 h-4 opacity-50" /> : <ChevronDown className="w-4 h-4 opacity-50" />}
+            {showIdentityDetails ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
           </div>
         </div>
 
@@ -179,12 +179,12 @@ export default function Settings() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="flex flex-col gap-3 pt-3 border-t border-border overflow-hidden"
+              className="flex flex-col gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 overflow-hidden"
             >
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => setShowPinModal(!showPinModal)}
-                  className="text-xs text-primary font-semibold flex items-center gap-1.5 hover:underline"
+                  className="text-xs text-sky-600 dark:text-sky-400 font-semibold flex items-center gap-1.5 hover:underline"
                 >
                   <Shield className="w-4 h-4" />
                   <span>{showPinModal ? 'Hide PIN Manager' : 'Change Security PIN'}</span>
@@ -194,7 +194,7 @@ export default function Settings() {
                     localStorage.removeItem('babysplitter_identity');
                     setLocation('/');
                   }}
-                  className="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-xl font-semibold hover:bg-red-500/30 transition-colors"
+                  className="text-xs bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 px-3 py-1.5 rounded-xl font-semibold hover:bg-red-500/20 transition-colors"
                 >
                   Switch Profile
                 </button>
@@ -209,7 +209,7 @@ export default function Settings() {
                     placeholder="Current PIN"
                     value={currentPinInput}
                     onChange={e => setCurrentPinInput(e.target.value)}
-                    className="w-full bg-input border border-border rounded-xl px-3 py-2 text-xs text-foreground placeholder:opacity-40 focus:outline-none focus:border-primary"
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-sky-500"
                   />
                   <input
                     type="password"
@@ -218,11 +218,11 @@ export default function Settings() {
                     placeholder="New PIN (4+ digits)"
                     value={newPinInput}
                     onChange={e => setNewPinInput(e.target.value)}
-                    className="w-full bg-input border border-border rounded-xl px-3 py-2 text-xs text-foreground placeholder:opacity-40 focus:outline-none focus:border-primary"
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-sky-500"
                   />
                   {statusMessage && (
                     <div className={`flex items-center gap-2 p-2 rounded-xl text-xs ${
-                      statusMessage.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                      statusMessage.type === 'success' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'
                     }`}>
                       {statusMessage.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
                       <span>{statusMessage.text}</span>
@@ -230,7 +230,7 @@ export default function Settings() {
                   )}
                   <button
                     type="submit"
-                    className="w-full bg-primary text-primary-foreground font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-primary/25"
+                    className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-sky-500/20"
                   >
                     <KeyRound className="w-3.5 h-3.5" />
                     <span>Save New PIN</span>
@@ -243,49 +243,49 @@ export default function Settings() {
       </div>
 
       {/* 2. Group Spending Card */}
-      <div className="bg-card border border-border rounded-3xl p-5 flex flex-col gap-4">
+      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-4 shadow-sm dark:shadow-none">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] tracking-wider opacity-50 font-bold uppercase">This Month</p>
+            <p className="text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 font-bold uppercase">This Month</p>
             <h2 className="text-base font-medium opacity-90">Group Spending</h2>
           </div>
           <div className="text-right">
             <span className="text-2xl font-bold font-mono">৳{stats.totalSpending.toLocaleString()}</span>
-            <p className="text-[10px] opacity-50">{stats.expenseCount} expense{stats.expenseCount === 1 ? '' : 's'}</p>
+            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">{stats.expenseCount} expense{stats.expenseCount === 1 ? '' : 's'}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-secondary/40 border border-border rounded-2xl p-3 flex flex-col justify-between">
-            <p className="text-[10px] uppercase font-bold opacity-50 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3 text-primary" /> Top Spender
+          <div className="bg-zinc-100/70 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-700/50 rounded-2xl p-3 flex flex-col justify-between">
+            <p className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-400 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3 text-sky-500" /> Top Spender
             </p>
             <div className="mt-2">
               <p className="font-bold text-sm truncate">{stats.topSpenderName}</p>
-              <p className="text-xs text-primary font-mono font-semibold">৳{stats.topSpenderAmount.toLocaleString()}</p>
+              <p className="text-xs text-sky-600 dark:text-sky-400 font-mono font-semibold">৳{stats.topSpenderAmount.toLocaleString()}</p>
             </div>
           </div>
 
-          <div className="bg-secondary/40 border border-border rounded-2xl p-3 flex flex-col justify-between">
-            <p className="text-[10px] uppercase font-bold opacity-50">Expenses</p>
+          <div className="bg-zinc-100/70 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-700/50 rounded-2xl p-3 flex flex-col justify-between">
+            <p className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-400">Expenses</p>
             <div className="mt-2">
               <p className="text-xl font-bold font-mono">{stats.expenseCount}</p>
-              <p className="text-[10px] opacity-50">this month</p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500">this month</p>
             </div>
           </div>
         </div>
 
-        <div className="pt-2 border-t border-border flex flex-col gap-2">
-          <p className="text-[10px] uppercase font-bold opacity-50 tracking-wider">Last 7 Days</p>
+        <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex flex-col gap-2">
+          <p className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500 tracking-wider">Last 7 Days</p>
           <div className="grid grid-cols-7 gap-1.5 items-end h-16 pt-2">
             {last7Days.map((d, i) => (
               <div key={i} className="flex flex-col items-center gap-1 h-full justify-end">
                 <div 
-                  className="w-full bg-primary/40 hover:bg-primary transition-all rounded-t-md"
+                  className="w-full bg-sky-500/30 dark:bg-sky-500/40 hover:bg-sky-500 transition-all rounded-t-md"
                   style={{ height: `${d.heightPercent}%` }}
                   title={`${d.dayName}: ৳${d.dayTotal}`}
                 />
-                <span className="text-[9px] opacity-50 font-medium">{d.dayName}</span>
+                <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-medium">{d.dayName}</span>
               </div>
             ))}
           </div>
@@ -293,24 +293,24 @@ export default function Settings() {
       </div>
 
       {/* 3. Appearance Card */}
-      <div className="bg-card border border-border rounded-3xl p-4 flex items-center justify-between">
+      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-4 flex items-center justify-between shadow-sm dark:shadow-none">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center">
-            {isDarkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-amber-500" />}
+          <div className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+            {isDarkMode ? <Moon className="w-5 h-5 text-sky-400" /> : <Sun className="w-5 h-5 text-amber-500" />}
           </div>
           <span className="text-base font-medium">Appearance</span>
         </div>
 
-        <div className="bg-secondary/60 border border-border p-1 rounded-2xl flex items-center gap-1">
+        <div className="bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 p-1 rounded-2xl flex items-center gap-1">
           <button
             onClick={() => toggleTheme(false)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${!isDarkMode ? 'bg-background text-foreground shadow-sm' : 'opacity-50 hover:opacity-100'}`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${!isDarkMode ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-white'}`}
           >
             Light
           </button>
           <button
             onClick={() => toggleTheme(true)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isDarkMode ? 'bg-primary text-primary-foreground shadow-sm' : 'opacity-50 hover:opacity-100'}`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isDarkMode ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900'}`}
           >
             Dark
           </button>
@@ -318,18 +318,18 @@ export default function Settings() {
       </div>
 
       {/* 4. Members Card */}
-      <div className="bg-card border border-border rounded-3xl p-5 flex flex-col gap-3">
+      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-3 shadow-sm dark:shadow-none">
         <div 
           onClick={() => setShowMembersList(!showMembersList)}
           className="flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center">
-              <Users className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+              <Users className="w-5 h-5 text-sky-500" />
             </div>
             <span className="text-base font-medium">Members</span>
           </div>
-          {showMembersList ? <ChevronUp className="w-4 h-4 opacity-50" /> : <ChevronDown className="w-4 h-4 opacity-50" />}
+          {showMembersList ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
         </div>
 
         <AnimatePresence>
@@ -338,37 +338,37 @@ export default function Settings() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="flex flex-col gap-3 pt-3 border-t border-border overflow-hidden"
+              className="flex flex-col gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 overflow-hidden"
             >
               <div className="flex flex-wrap gap-2">
                 {members?.map(m => (
-                  <span key={m.id} className="text-xs bg-secondary px-3 py-1.5 rounded-xl font-medium opacity-90">
+                  <span key={m.id} className="text-xs bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-xl font-medium text-zinc-700 dark:text-zinc-300">
                     {m.current_name} {m.is_preset && '★'}
                   </span>
                 ))}
               </div>
 
-              <form onSubmit={handleAddMember} className="flex flex-col gap-2 pt-2 border-t border-border">
-                <label className="text-[10px] uppercase font-bold opacity-50">Add Permanent Member</label>
+              <form onSubmit={handleAddMember} className="flex flex-col gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <label className="text-[10px] uppercase font-bold text-zinc-400 dark:text-zinc-500">Add Permanent Member</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder="Member name"
                     value={newMemberName}
                     onChange={e => setNewMemberName(e.target.value)}
-                    className="flex-1 bg-input border border-border rounded-2xl px-3.5 py-2 text-xs text-foreground placeholder:opacity-40 focus:outline-none focus:border-primary"
+                    className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-3.5 py-2 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:border-sky-500"
                   />
                   <button
                     type="submit"
                     disabled={addMember.isPending || !newMemberName.trim()}
-                    className="bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-3.5 py-2 rounded-2xl text-xs font-semibold flex items-center gap-1 shrink-0"
+                    className="bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white px-3.5 py-2 rounded-2xl text-xs font-semibold flex items-center gap-1 shrink-0"
                   >
                     {addMember.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
                     <span>Add</span>
                   </button>
                 </div>
                 {memberMessage && (
-                  <p className={`text-xs ${memberMessage.type === 'success' ? 'text-emerald-500' : 'text-red-500'}`}>
+                  <p className={`text-xs ${memberMessage.type === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                     {memberMessage.text}
                   </p>
                 )}
@@ -378,24 +378,24 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
-      {/* 5. App Info Card */}
-      <div className="bg-card border border-border rounded-3xl p-5 flex items-start gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center shrink-0 mt-0.5">
-          <Info className="w-5 h-5 text-primary" />
+      {/* 5. App Info Card with App Logo Badge */}
+      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm dark:shadow-none">
+        <div className="w-11 h-11 rounded-2xl bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+          <Receipt className="w-6 h-6 text-sky-600 dark:text-sky-400" />
         </div>
         <div className="flex flex-col gap-1">
-          <h2 className="font-bold text-sm">BabySplitter v3.7</h2>
-          <p className="text-xs opacity-60 leading-relaxed">
+          <h2 className="font-bold text-sm tracking-tight">BabySplitter v3.7</h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
             A premium, personal shared expense tracker built for close friends. Real-time sync powered by Supabase.
           </p>
-          <p className="text-xs opacity-60 mt-1">
-            Developed by <span className="text-primary font-semibold">benzavraar</span>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+            Developed by <span className="text-sky-600 dark:text-sky-400 font-semibold">benzavraar</span>
           </p>
         </div>
       </div>
 
       {/* Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-border px-6 py-2.5 z-50 flex items-center justify-around">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-black/90 backdrop-blur-xl border-t border-zinc-200 dark:border-zinc-800 px-6 py-2.5 z-50 flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href || (item.href === '/settings' && location === '/settings');
@@ -403,12 +403,12 @@ export default function Settings() {
             <Link key={item.href} href={item.href}>
               <button
                 className={`flex flex-col items-center gap-1 transition-all ${
-                  isActive ? 'text-primary' : 'opacity-50 hover:opacity-100'
+                  isActive ? 'text-sky-600 dark:text-sky-400' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
                 }`}
               >
                 <div
                   className={`p-1.5 rounded-2xl transition-all ${
-                    isActive ? 'bg-primary/20 text-primary' : 'bg-transparent'
+                    isActive ? 'bg-sky-500/10 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400' : 'bg-transparent'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
