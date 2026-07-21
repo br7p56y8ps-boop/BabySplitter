@@ -234,10 +234,7 @@ function SettleConfirmDialog({
                 >
                   <div className="px-3 pb-3 flex flex-col gap-2">
                     <p className="text-[10px] leading-relaxed text-muted-foreground">
-                      Instead of settling each expense separately, it is calculate with each person's overall
-                      balance (total paid minus their fair share) and net it against everyone else's.
-                      This gives the fewest possible payments to clear all balances — the same end
-                      result but just with fewer transactions.
+                      Instead of playing financial ping-pong and settling every single receipt manually, it is calculated with each overall balance (total spent minus their actual fair share). Then it net those totals together so you make the absolute minimum number of transfers. Same final result, zero unnecessary payment chaos!
                     </p>
                     <button
                       onClick={() => setShowBreakdown(v => !v)}
@@ -252,7 +249,7 @@ function SettleConfirmDialog({
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
+                          className="overflow-hidden bg-black/20 dark:bg-white/5 rounded-xl p-2.5 mt-1 border border-white/10"
                         >
                           {netGroups.map(group => (
                             <div key={group.currency} className="flex flex-col gap-1 mt-1">
