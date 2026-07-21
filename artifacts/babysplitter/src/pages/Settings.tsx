@@ -50,11 +50,15 @@ export default function Settings() {
     let settledCount = 0;
     let foodSpending = 0;
 
-    list.forEach(e => {
-      const amt = Number(e.amount || 0);
+    list.forEach((e: any) => {
+      // 🛠️ Robust check for amount across different DB field names & string types
+      const rawAmount = e.amount ?? e.total_amount ?? e.cost ?? 0;
+      const amt = typeof rawAmount === 'string' ? parseFloat(rawAmount) || 0 : Number(rawAmount || 0);
+
       totalExpended += amt;
 
-      const isSettled = e.is_settled || e.status === 'settled';
+      // 🛠️ Robust check for settled status
+      const isSettled = Boolean(e.is_settled || e.settled || e.status === 'settled');
 
       if (isSettled) {
         settledCount++;
@@ -63,14 +67,16 @@ export default function Settings() {
         totalUnsettledAmount += amt;
       }
 
-      // Check for food related keywords to drive Obesity Bar
-      const titleLower = (e.title || '').toLowerCase();
+      // 🍔 Smart Food Detection: Assume expense IS food unless explicitly non-food
+      const titleLower = (e.title || e.description || '').toLowerCase();
       const categoryLower = (e.category || '').toLowerCase();
-      const isFood = ['food', 'eat', 'meal', 'dinner', 'lunch', 'breakfast', 'snack', 'restaurant', 'cafe', 'burger', 'pizza'].some(
+
+      const isNonFood = ['rent', 'bill', 'electric', 'wifi', 'internet', 'cab', 'uber', 'pathao', 'bus', 'flight', 'recharge', 'movie'].some(
         keyword => titleLower.includes(keyword) || categoryLower.includes(keyword)
       );
 
-      if (isFood) {
+      // If not explicitly marked as non-food, count towards food spending
+      if (!isNonFood && amt > 0) {
         foodSpending += amt;
       }
     });
@@ -243,7 +249,7 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
-      {/* 2. Group Damage Card (Replaces all graphs) */}
+      {/* 2. Group Damage Card */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex flex-col gap-4 shadow-sm dark:shadow-none">
         {/* Header Section */}
         <div className="flex items-start justify-between">
@@ -388,7 +394,7 @@ export default function Settings() {
         </AnimatePresence>
       </div>
 
-      {/* 5. App Info Card with PWA App Icon */}
+      {/* 5. App Info Card */}
       <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-5 flex items-start gap-4 shadow-sm dark:shadow-none">
         <img 
           src="/icon-192.png" 
