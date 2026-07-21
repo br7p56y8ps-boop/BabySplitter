@@ -236,52 +236,10 @@ function SettleConfirmDialog({
                     <p className="text-[10px] leading-relaxed text-muted-foreground">
                       Instead of playing financial ping-pong and settling every single receipt manually, it is calculated with each overall balance (total spent minus their actual fair share). Then it net those totals together so you make the absolute minimum number of transfers. Same final result, zero unnecessary payment chaos!
                     </p>
-                    <button
-                      onClick={() => setShowBreakdown(v => !v)}
-                      className="flex items-center gap-1 text-[10px] font-semibold text-primary self-start"
-                    >
-                      {showBreakdown ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-                      Per-person breakdown
-                    </button>
-                    <AnimatePresence>
-                      {showBreakdown && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden bg-black/20 dark:bg-white/5 rounded-xl p-2.5 mt-1 border border-white/10"
-                        >
-                          {netGroups.map(group => (
-                            <div key={group.currency} className="flex flex-col gap-1 mt-1">
-                              {netGroups.length > 1 && (
-                                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                                  {group.currency}
-                                </p>
-                              )}
-                              {group.personBreakdown
-                                .filter(r => r.paid > 0 || r.owes > 0)
-                                .map(r => (
-                                  <div key={r.name} className="text-[10px] text-muted-foreground leading-snug">
-                                    <span className="font-semibold text-foreground">{r.name}</span>
-                                    {': '}Paid {group.symbol}{r.paid.toLocaleString()}, Owes {group.symbol}{r.owes.toLocaleString()}
-                                    {' → '}
-                                    <span className={r.net >= 0 ? 'text-emerald-500 font-semibold' : 'text-rose-400 font-semibold'}>
-                                      {r.net >= 0
-                                        ? `+${group.symbol}${r.net.toLocaleString()} (to receive)`
-                                        : `−${group.symbol}${Math.abs(r.net).toLocaleString()} (to pay)`}
-                                    </span>
-                                  </div>
-                                ))}
-                            </div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
         </div>
 
         <div className="px-4 py-4 flex gap-2.5 shrink-0">
