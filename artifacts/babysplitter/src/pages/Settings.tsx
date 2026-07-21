@@ -1,20 +1,26 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useExpenses, useMembers } from '@/hooks/useQueries';
+import { useMutations } from '@/hooks/useMutations';
 import { useLocation } from 'wouter';
-import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Calendar, Users, Info } from 'lucide-react';
+import { Shield, KeyRound, CheckCircle2, AlertCircle, TrendingUp, Calendar, Users, Info, UserPlus, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Settings() {
   const { identity } = useAuth();
   const { data: expenses } = useExpenses();
   const { data: members } = useMembers();
+  const { addMember } = useMutations();
   const [, setLocation] = useLocation();
 
   const [showPinModal, setShowPinModal] = useState(false);
   const [currentPinInput, setCurrentPinInput] = useState('');
   const [newPinInput, setNewPinInput] = useState('');
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // New member state
+  const [newMemberName, setNewMemberName] = useState('');
+  const [memberMessage, setMemberMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Compute graph data with 7-day filter and smart fallback to full period
   const chartData = useMemo(() => {
@@ -73,8 +79,24 @@ export default function Settings() {
     }, 1500);
   };
 
+  const handleAddMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMemberName.trim()) return;
+
+    addMember.mutate(newMemberName.trim(), {
+      onSuccess: () => {
+        setMemberMessage({ type: 'success', text: `Added "${newMemberName.trim()}" as permanent member!` });
+        setNewMemberName('');
+        setTimeout(() => setMemberMessage(null), 3000);
+      },
+      onError: (err: any) => {
+        setMemberMessage({ type: 'error', text: err?.message || 'Failed to add member.' });
+      }
+    });
+  };
+
   return (
-    <div className="min-h-[100dvh] bg-black text-white pb-28 p-6 max-w-md mx-auto flex flex-col gap-6">
+    <div className="min-h-[100dvh] bg-black text-white pb-32 p-6 max-w-md mx-auto flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         {(() => {
@@ -268,7 +290,7 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Members Overview Card */}
+      {/* Project Members Card with Add Permanent Member Feature */}
       <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
@@ -279,6 +301,7 @@ export default function Settings() {
             <p className="text-xs text-white/50">{members?.length || 0} active participants</p>
           </div>
         </div>
+
         <div className="flex flex-wrap gap-2 pt-1">
           {members?.map(m => (
             <span key={m.id} className="text-xs bg-white/10 px-3 py-1.5 rounded-xl font-medium text-white/90">
@@ -286,6 +309,37 @@ export default function Settings() {
             </span>
           ))}
         </div>
+
+        {/* Add Permanent Member Form */}
+        <form onSubmit={handleAddMember} className="flex flex-col gap-2.5 pt-3 border-t border-white/10 mt-1">
+          <label className="text-xs text-white/60 font-medium">Add Permanent Member</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Member name"
+              value={newMemberName}
+              onChange={e => setNewMemberName(e.target.value)}
+              className="flex-1 bg-black/50 border border-white/20 rounded-2xl px-3.5 py-2.5 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-primary transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={addMember.isPending || !newMemberName.trim()}
+              className="bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0"
+            >
+              {addMember.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+              <span>Add</span>
+            </button>
+          </div>
+
+          {memberMessage && (
+            <div className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-medium mt-1 ${
+              memberMessage.type === 'success' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'
+            }`}>
+              {memberMessage.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
+              <span>{memberMessage.text}</span>
+            </div>
+          )}
+        </form>
       </div>
 
       {/* App Info Card */}
